@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - BikerZone</title>
+    <link rel="icon" type="image/svg+xml" href="/static/img/logo.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/style.css?v=2.0">
+</head>
+<body class="login-body">
+    <div class="login-wrapper">
+        <div class="login-card">
+            <div class="login-header">
+                <img src="/static/img/logo.svg" alt="BikerZone" class="login-logo">
+                <h1>BikerZone</h1>
+                <p>Sistema de gestion para taller</p>
+            </div>
+
+            {% if error %}
+            <div class="alert alert-danger">{{ error }}</div>
+            {% endif %}
+
+            <form method="POST" action="/login" class="login-form">
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" name="email" required placeholder="admin@bikerzone.com" autocomplete="email">
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Contrasena</label>
+                    <input type="password" id="password" name="password" required placeholder="Tu contrasena" autocomplete="current-password">
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-block">Iniciar Sesion</button>
+            </form>
+
+            <div class="login-footer">
+                <p>Demo: admin@bikerzone.com / admin123</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

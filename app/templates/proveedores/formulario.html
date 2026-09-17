@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}{% if proveedor %}Editar Proveedor{% else %}Nuevo Proveedor{% endif %} - BikerZone{% endblock %}
+
+{% block breadcrumbs %}
+<nav class="breadcrumbs">
+    <a href="/dashboard">Inicio</a>
+    <span class="separator">/</span>
+    <a href="/proveedores">Proveedores</a>
+    <span class="separator">/</span>
+    <span class="current">{% if proveedor %}Editar{% else %}Nuevo{% endif %}</span>
+</nav>
+{% endblock %}
+
+{% block content %}
+<header class="page-header">
+    <div class="page-header-content">
+        <a href="/proveedores" class="link-arrow">&larr; Volver a proveedores</a>
+        <h1>{% if proveedor %}Editar Proveedor{% else %}Nuevo Proveedor{% endif %}</h1>
+    </div>
+</header>
+
+<div class="card">
+    <div class="card-body">
+        <form method="POST" action="{% if proveedor %}/proveedores/{{ proveedor.id }}/editar{% else %}/proveedores/nuevo{% endif %}">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="nombre">Nombre *</label>
+                    <input type="text" id="nombre" name="nombre" required
+                           value="{{ proveedor.nombre if proveedor else '' }}"
+                           placeholder="Nombre del proveedor">
+                </div>
+
+                <div class="form-group">
+                    <label for="contacto">Contacto</label>
+                    <input type="text" id="contacto" name="contacto"
+                           value="{{ proveedor.contacto if proveedor and proveedor.contacto else '' }}"
+                           placeholder="Nombre del contacto">
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="telefono">Telefono</label>
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <span style="padding: 0.6rem 0.75rem; background: var(--bg-input); border: 1px solid var(--border-color); border-radius: var(--border-radius); color: var(--text-secondary); font-size: 0.9rem; white-space: nowrap;">+502</span>
+                        <input type="tel" id="telefono" name="telefono"
+                               value="{{ proveedor.telefono if proveedor and proveedor.telefono else '' }}"
+                               placeholder="12345678"
+                               pattern="[0-9]{8}"
+                               maxlength="8"
+                               style="flex: 1;">
+                    </div>
+                    <small style="color: var(--text-muted); font-size: 0.75rem; margin-top: 0.25rem; display: block;">Formato: 8 digitos (ej: 12345678)</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" name="email"
+                           value="{{ proveedor.email if proveedor and proveedor.email else '' }}"
+                           placeholder="correo@proveedor.com">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="direccion">Direccion</label>
+                <input type="text" id="direccion" name="direccion"
+                       value="{{ proveedor.direccion if proveedor and proveedor.direccion else '' }}"
+                       placeholder="Calle, numero, colonia, ciudad">
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="rfc">RFC</label>
+                    <input type="text" id="rfc" name="rfc"
+                           value="{{ proveedor.rfc if proveedor and proveedor.rfc else '' }}"
+                           placeholder="RFC o NIT">
+                </div>
+
+                <div class="form-group">
+                    <label for="notas">Notas</label>
+                    <input type="text" id="notas" name="notas"
+                           value="{{ proveedor.notas if proveedor and proveedor.notas else '' }}"
+                           placeholder="Informacion adicional...">
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">
+                    {% if proveedor %}Guardar Cambios{% else %}Crear Proveedor{% endif %}
+                </button>
+                <a href="{% if proveedor %}/proveedores/{{ proveedor.id }}{% else %}/proveedores{% endif %}" class="btn btn-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}

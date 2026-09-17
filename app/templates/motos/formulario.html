@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block title %}{% if moto %}Editar Moto{% else %}Nueva Moto{% endif %} - BikerZone{% endblock %}
+
+{% block breadcrumbs %}
+<nav class="breadcrumbs">
+    <a href="/dashboard">Inicio</a>
+    <span class="separator">/</span>
+    <a href="/motos">Motos</a>
+    <span class="separator">/</span>
+    <span class="current">{% if moto %}Editar{% else %}Nuevo{% endif %}</span>
+</nav>
+{% endblock %}
+
+{% block content %}
+<header class="page-header">
+    <div class="page-header-content">
+        <a href="/motos" class="link-arrow">&larr; Volver a motos</a>
+        <h1>{% if moto %}Editar Moto{% else %}Nueva Moto{% endif %}</h1>
+    </div>
+</header>
+
+<div class="card">
+    <div class="card-body">
+        <form method="POST" action="{% if moto %}/motos/{{ moto.id }}/editar{% else %}/motos/nueva{% endif %}">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="client_id">Cliente *</label>
+                    <select id="client_id" name="client_id" required>
+                        <option value="">Seleccionar cliente...</option>
+                        {% for c in clientes %}
+                        <option value="{{ c.id }}" {% if (moto and moto.client_id == c.id) or (cliente_id == c.id) %}selected{% endif %}>
+                            {{ c.nombre }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="marca">Marca *</label>
+                    <input type="text" id="marca" name="marca" required
+                           value="{{ moto.marca if moto else '' }}"
+                           placeholder="Honda, Yamaha, Kawasaki...">
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="modelo">Modelo *</label>
+                    <input type="text" id="modelo" name="modelo" required
+                           value="{{ moto.modelo if moto else '' }}"
+                           placeholder="CBR600RR, MT-07, Ninja 400...">
+                </div>
+
+                <div class="form-group">
+                    <label for="anio">Año</label>
+                    <input type="number" id="anio" name="anio"
+                           value="{{ moto.anio if moto and moto.anio else '' }}"
+                           placeholder="2024" min="1900" max="2099">
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="placa">Placa</label>
+                    <input type="text" id="placa" name="placa"
+                           value="{{ moto.placa if moto and moto.placa else '' }}"
+                           placeholder="ABC123">
+                </div>
+
+                <div class="form-group">
+                    <label for="color">Color</label>
+                    <input type="text" id="color" name="color"
+                           value="{{ moto.color if moto and moto.color else '' }}"
+                           placeholder="Roja, Azul, Negra...">
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="vin">VIN / Numero de Serie</label>
+                    <input type="text" id="vin" name="vin"
+                           value="{{ moto.vin if moto and moto.vin else '' }}"
+                           placeholder="Numero de serie del vehiculo">
+                </div>
+
+                <div class="form-group">
+                    <label for="kilometraje">Kilometraje</label>
+                    <input type="number" id="kilometraje" name="kilometraje"
+                           value="{{ moto.kilometraje if moto else '0' }}"
+                           placeholder="0" min="0">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="notas">Notas</label>
+                <textarea id="notas" name="notas"
+                          placeholder="Informacion adicional sobre la moto...">{{ moto.notas if moto and moto.notas else '' }}</textarea>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">
+                    {% if moto %}Guardar Cambios{% else %}Registrar Moto{% endif %}
+                </button>
+                <a href="{% if moto %}/motos/{{ moto.id }}{% else %}/motos{% endif %}" class="btn btn-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}

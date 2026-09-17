@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}Reporte de Compras - BikerZone{% endblock %}
+
+{% block breadcrumbs %}
+<nav class="breadcrumbs">
+    <a href="/dashboard">Inicio</a>
+    <span class="separator">/</span>
+    <a href="/reportes">Reportes</a>
+    <span class="separator">/</span>
+    <span class="current">Compras</span>
+</nav>
+{% endblock %}
+
+{% block head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
+{% block content %}
+<header class="page-header">
+    <div class="page-header-content">
+        <a href="/reportes" class="link-arrow">&larr; Volver a reportes</a>
+        <h1>Reporte de Compras</h1>
+    </div>
+</header>
+
+<div class="dashboard-grid">
+    <div class="kpi-card">
+        <div class="kpi-content">
+            <span class="kpi-value">{{ currency_symbol }}{{ "%.0f"|format(total_compras) }}</span>
+            <span class="kpi-label">Total Compras (6 meses)</span>
+        </div>
+    </div>
+</div>
+
+<section class="panel" style="margin-bottom: 1.5rem;">
+    <header class="panel-header">
+        <h2>Compras por Mes</h2>
+    </header>
+    <div class="panel-body" style="height: 300px;">
+        <canvas id="chartCompras"></canvas>
+    </div>
+</section>
+
+<section class="panel">
+    <header class="panel-header">
+        <h2>Detalle por Mes</h2>
+    </header>
+    <div class="panel-body">
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Mes</th>
+                        <th>Ordenes</th>
+                        <th>Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for c in compras_mes %}
+                    <tr>
+                        <td>{{ c.mes }}</td>
+                        <td>{{ c.ordenes }}</td>
+                        <td>{{ currency_symbol }}{{ "%.2f"|format(c.total) }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+const comprasMes = {{ compras_mes | tojson }};
+
+new Chart(document.getElementById('chartCompras'), {
+    type: 'bar',
+    data: {
+        labels: comprasMes.map(c => c.mes),
+        datasets: [{
+            label: 'Total ($)',
+            data: comprasMes.map(c => c.total),
+            backgroundColor: '#f39c12',
+            borderRadius: 4
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: true } }
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block title %}Reporte de Productividad - BikerZone{% endblock %}
+
+{% block breadcrumbs %}
+<nav class="breadcrumbs">
+    <a href="/dashboard">Inicio</a>
+    <span class="separator">/</span>
+    <a href="/reportes">Reportes</a>
+    <span class="separator">/</span>
+    <span class="current">Productividad</span>
+</nav>
+{% endblock %}
+
+{% block head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
+{% block content %}
+<header class="page-header">
+    <div class="page-header-content">
+        <a href="/reportes" class="link-arrow">&larr; Volver a reportes</a>
+        <h1>Reporte de Productividad</h1>
+    </div>
+</header>
+
+<div class="dashboard-grid">
+    <div class="kpi-card">
+        <div class="kpi-content">
+            <span class="kpi-value">{{ tiempos.dias_promedio }}</span>
+            <span class="kpi-label">Dias Promedio Reparacion</span>
+        </div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-content">
+            <span class="kpi-value">{{ stats.completadas_mes }}</span>
+            <span class="kpi-label">Completadas Mes</span>
+        </div>
+    </div>
+</div>
+
+<div class="dashboard-row">
+    <section class="panel">
+        <header class="panel-header">
+            <h2>Ordenes por Tecnico</h2>
+        </header>
+        <div class="panel-body" style="height: 300px;">
+            <canvas id="chartTecnicos"></canvas>
+        </div>
+    </section>
+
+    <section class="panel">
+        <header class="panel-header">
+            <h2>Detalle por Tecnico</h2>
+        </header>
+        <div class="panel-body">
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Tecnico</th>
+                            <th>Ordenes Totales</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for t in ordenes_tecnico %}
+                        <tr>
+                            <td><strong>{{ t.tecnico }}</strong></td>
+                            <td>{{ t.ordenes }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+const ordenesTecnico = {{ ordenes_tecnico | tojson }};
+
+new Chart(document.getElementById('chartTecnicos'), {
+    type: 'doughnut',
+    data: {
+        labels: ordenesTecnico.map(t => t.tecnico),
+        datasets: [{
+            data: ordenesTecnico.map(t => t.ordenes),
+            backgroundColor: ['#c0392b', '#2c3e50', '#27ae60', '#f39c12', '#2980b9'],
+            borderWidth: 2,
+            borderColor: '#ffffff'
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'right',
+                labels: { boxWidth: 12, padding: 10, font: { size: 12 } }
+            }
+        }
+    }
+});
+</script>
+{% endblock %}

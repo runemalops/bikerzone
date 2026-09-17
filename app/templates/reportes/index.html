@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block title %}Reportes - BikerZone{% endblock %}
+
+{% block breadcrumbs %}
+<nav class="breadcrumbs">
+    <a href="/dashboard">Inicio</a>
+    <span class="separator">/</span>
+    <span class="current">Reportes</span>
+</nav>
+{% endblock %}
+
+{% block content %}
+<header class="page-header">
+    <div class="page-header-content">
+        <h1>Reportes</h1>
+        <p>Selecciona un tipo de reporte</p>
+    </div>
+    <a href="/reportes/export/clientes/csv" class="btn btn-secondary">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        Exportar Clientes CSV
+    </a>
+</header>
+
+<div class="dashboard-grid" style="grid-template-columns: repeat(2, 1fr);">
+    <a href="/reportes/ventas" class="card" style="text-decoration: none; transition: transform 0.2s;">
+        <div class="card-body" style="display: flex; align-items: center; gap: 1.5rem; padding: 2rem;">
+            <div class="kpi-icon kpi-green" style="width: 64px; height: 64px;">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                </svg>
+            </div>
+            <div>
+                <h2 style="margin-bottom: 0.25rem;">Ventas</h2>
+                <p style="color: var(--text-secondary); margin: 0;">Ingresos mensuales, ventas por tecnico, top clientes</p>
+            </div>
+        </div>
+    </a>
+
+    <a href="/reportes/inventario" class="card" style="text-decoration: none; transition: transform 0.2s;">
+        <div class="card-body" style="display: flex; align-items: center; gap: 1.5rem; padding: 2rem;">
+            <div class="kpi-icon kpi-blue" style="width: 64px; height: 64px;">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                </svg>
+            </div>
+            <div>
+                <h2 style="margin-bottom: 0.25rem;">Inventario</h2>
+                <p style="color: var(--text-secondary); margin: 0;">Valor total, stock por categoria, productos criticos</p>
+            </div>
+        </div>
+    </a>
+
+    <a href="/reportes/compras" class="card" style="text-decoration: none; transition: transform 0.2s;">
+        <div class="card-body" style="display: flex; align-items: center; gap: 1.5rem; padding: 2rem;">
+            <div class="kpi-icon kpi-yellow" style="width: 64px; height: 64px;">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+                    <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+                </svg>
+            </div>
+            <div>
+                <h2 style="margin-bottom: 0.25rem;">Compras</h2>
+                <p style="color: var(--text-secondary); margin: 0;">Ordenes de compra, gastos por mes y proveedor</p>
+            </div>
+        </div>
+    </a>
+
+    <a href="/reportes/productividad" class="card" style="text-decoration: none; transition: transform 0.2s;">
+        <div class="card-body" style="display: flex; align-items: center; gap: 1.5rem; padding: 2rem;">
+            <div class="kpi-icon kpi-red" style="width: 64px; height: 64px;">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                    <circle cx="9" cy="7" r="4"/>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                </svg>
+            </div>
+            <div>
+                <h2 style="margin-bottom: 0.25rem;">Productividad</h2>
+                <p style="color: var(--text-secondary); margin: 0;">Tiempo promedio, ordenes por tecnico, rendimiento</p>
+            </div>
+        </div>
+    </a>
+</div>
+
+{% endblock %}

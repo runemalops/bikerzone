@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% block title %}{% if repuesto %}Editar Repuesto{% else %}Nuevo Repuesto{% endif %} - BikerZone{% endblock %}
+
+{% block breadcrumbs %}
+<nav class="breadcrumbs">
+    <a href="/dashboard">Inicio</a>
+    <span class="separator">/</span>
+    <a href="/repuestos">Repuestos</a>
+    <span class="separator">/</span>
+    <span class="current">{% if repuesto %}Editar{% else %}Nuevo{% endif %}</span>
+</nav>
+{% endblock %}
+
+{% block content %}
+<header class="page-header">
+    <div class="page-header-content">
+        <a href="/repuestos" class="link-arrow">&larr; Volver a repuestos</a>
+        <h1>{% if repuesto %}Editar Repuesto{% else %}Nuevo Repuesto{% endif %}</h1>
+    </div>
+</header>
+
+<div class="card">
+    <div class="card-body">
+        <form method="POST" action="{% if repuesto %}/repuestos/{{ repuesto.id }}/editar{% else %}/repuestos/nuevo{% endif %}">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="codigo">Codigo *</label>
+                    <input type="text" id="codigo" name="codigo" required
+                           value="{{ repuesto.codigo if repuesto else '' }}"
+                           placeholder="REP-001">
+                </div>
+
+                <div class="form-group">
+                    <label for="nombre">Nombre *</label>
+                    <input type="text" id="nombre" name="nombre" required
+                           value="{{ repuesto.nombre if repuesto else '' }}"
+                           placeholder="Nombre del repuesto">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="descripcion">Descripcion</label>
+                <textarea id="descripcion" name="descripcion"
+                          placeholder="Descripcion detallada del repuesto...">{{ repuesto.descripcion if repuesto and repuesto.descripcion else '' }}</textarea>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="categoria">Categoria</label>
+                    <select id="categoria" name="categoria">
+                        <option value="">Seleccionar...</option>
+                        {% for cat in categorias %}
+                        <option value="{{ cat }}" {% if repuesto and repuesto.categoria == cat %}selected{% endif %}>{{ cat }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="marca">Marca</label>
+                    <input type="text" id="marca" name="marca"
+                           value="{{ repuesto.marca if repuesto and repuesto.marca else '' }}"
+                           placeholder="Marca del repuesto">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="compatible_models">Modelos Compatibles</label>
+                <input type="text" id="compatible_models" name="compatible_models"
+                       value="{{ repuesto.compatible_models if repuesto and repuesto.compatible_models else '' }}"
+                       placeholder="CBR600RR, MT-07, Ninja 400...">
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="stock_minimo">Stock Minimo</label>
+                    <input type="number" id="stock_minimo" name="stock_minimo" min="0"
+                           value="{{ repuesto.stock_minimo if repuesto else '3' }}">
+                </div>
+
+                <div class="form-group">
+                    <label for="stock_actual">Stock Actual</label>
+                    <input type="number" id="stock_actual" name="stock_actual" min="0"
+                           value="{{ repuesto.stock_actual if repuesto else '0' }}">
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="precio_compra">Precio Compra ($)</label>
+                    <input type="number" id="precio_compra" name="precio_compra" step="0.01" min="0"
+                           value="{{ repuesto.precio_compra if repuesto and repuesto.precio_compra else '' }}"
+                           placeholder="0.00">
+                </div>
+
+                <div class="form-group">
+                    <label for="precio_venta">Precio Venta ($)</label>
+                    <input type="number" id="precio_venta" name="precio_venta" step="0.01" min="0"
+                           value="{{ repuesto.precio_venta if repuesto and repuesto.precio_venta else '' }}"
+                           placeholder="0.00">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="ubicacion">Ubicacion</label>
+                <input type="text" id="ubicacion" name="ubicacion"
+                       value="{{ repuesto.ubicacion if repuesto and repuesto.ubicacion else '' }}"
+                       placeholder="Estante A-3, Repisa 2...">
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">
+                    {% if repuesto %}Guardar Cambios{% else %}Crear Repuesto{% endif %}
+                </button>
+                <a href="{% if repuesto %}/repuestos/{{ repuesto.id }}{% else %}/repuestos{% endif %}" class="btn btn-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}

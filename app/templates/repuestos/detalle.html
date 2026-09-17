@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+{% block title %}{{ repuesto.nombre }} - BikerZone{% endblock %}
+
+{% block breadcrumbs %}
+<nav class="breadcrumbs">
+    <a href="/dashboard">Inicio</a>
+    <span class="separator">/</span>
+    <a href="/repuestos">Repuestos</a>
+    <span class="separator">/</span>
+    <span class="current">Detalle</span>
+</nav>
+{% endblock %}
+
+{% block content %}
+<header class="detail-header">
+    <div>
+        <a href="/repuestos" class="link-arrow">&larr; Volver a repuestos</a>
+        <h1>{{ repuesto.nombre }}</h1>
+        <div class="detail-meta">
+            <div class="detail-meta-item">
+                <span class="detail-meta-label">Codigo</span>
+                <span class="detail-meta-value">{{ repuesto.codigo }}</span>
+            </div>
+            {% if repuesto.categoria %}
+            <div class="detail-meta-item">
+                <span class="detail-meta-label">Categoria</span>
+                <span class="detail-meta-value">{{ repuesto.categoria }}</span>
+            </div>
+            {% endif %}
+            {% if repuesto.marca %}
+            <div class="detail-meta-item">
+                <span class="detail-meta-label">Marca</span>
+                <span class="detail-meta-value">{{ repuesto.marca }}</span>
+            </div>
+            {% endif %}
+            <div class="detail-meta-item">
+                <span class="detail-meta-label">Stock</span>
+                <span class="detail-meta-value">
+                    {{ repuesto.stock_actual }} / {{ repuesto.stock_minimo }} min
+                    {% if repuesto.stock_actual == 0 %}
+                    <span class="badge badge-danger">Sin Stock</span>
+                    {% elif repuesto.stock_actual <= repuesto.stock_minimo %}
+                    <span class="badge badge-warning">Bajo</span>
+                    {% else %}
+                    <span class="badge badge-success">OK</span>
+                    {% endif %}
+                </span>
+            </div>
+        </div>
+    </div>
+    <div class="form-actions">
+        <a href="/repuestos/{{ repuesto.id }}/editar" class="btn btn-secondary">Editar</a>
+        {% if user.rol == 'admin' %}
+        <form method="POST" action="/repuestos/{{ repuesto.id }}/eliminar" style="display:inline"
+              onsubmit="return confirm('Eliminar este repuesto?')">
+            <button type="submit" class="btn btn-danger btn-sm">Eliminar</button>
+        </form>
+        {% endif %}
+    </div>
+</header>
+
+<div class="dashboard-row">
+    <div>
+        <!-- Informacion del repuesto -->
+        <section class="panel" style="margin-bottom: 1.5rem;">
+            <header class="panel-header">
+                <h2>Informacion</h2>
+            </header>
+            <div class="panel-body">
+                {% if repuesto.descripcion %}
+                <p><strong>Descripcion:</strong></p>
+                <p style="margin-bottom: 1rem; padding: 0.75rem; background: var(--bg-input); border-radius: var(--border-radius);">{{ repuesto.descripcion }}</p>
+                {% endif %}
+
+                {% if repuesto.compatible_models %}
+                <p><strong>Modelos Compatibles:</strong> {{ repuesto.compatible_models }}</p>
+                {% endif %}
+
+                {% if repuesto.ubicacion %}
+                <p><strong>Ubicacion:</strong> {{ repuesto.ubicacion }}</p>
+                {% endif %}
+
+                <div class="form-row" style="margin-top: 1rem;">
+                    <div class="form-group">
+                        <label>Precio Compra</label>
+                        <p style="font-size: 1.25rem; font-weight: 600;">{% if repuesto.precio_compra %}{{ currency_symbol }}{{ "%.2f"|format(repuesto.precio_compra) }}{% else %}-{% endif %}</p>
+                    </div>
+                    <div class="form-group">
+                        <label>Precio Venta</label>
+                        <p style="font-size: 1.25rem; font-weight: 600; color: var(--color-success);">{% if repuesto.precio_venta %}{{ currency_symbol }}{{ "%.2f"|format(repuesto.precio_venta) }}{% else %}-{% endif %}</p>
+                    </div>
+                </div>
+
+                {% if repuesto.precio_compra and repuesto.precio_venta %}
+                <p style="font-size: 0.85rem; color: var(--text-muted);">
+                    Margen: {{ currency_symbol }}{{ "%.2f"|format(repuesto.precio_venta - repuesto.precio_compra) }}
+                    ({{ "%.1f"|format(((repuesto.precio_venta - repuesto.precio_compra) / repuesto.precio_compra * 100) if repuesto.precio_compra > 0 else 0 }}%)
+                </p>
+                {% endif %}
+            </div>
+        </section>
+    </div>
+
+    <div>
+        <!-- Actualizar Stock -->
+        <section class="panel" style="margin-bottom: 1.5rem;">
+            <header class="panel-header">
+                <h2>Actualizar Stock</h2>
+            </header>
+            <div class="panel-body">
+                <form method="POST" action="/repuestos/{{ repuesto.id }}/stock" style="display: flex; gap: 0.5rem; align-items: flex-end; flex-wrap: wrap;">
+                    <div class="form-group" style="margin-bottom: 0; flex: 1; min-width: 150px;">
+                        <label for="tipo">Tipo</label>
+                        <select id="tipo" name="tipo" required>
+                            <option value="entrada">Entrada (+)</option>
+                            <option value="salida">Salida (-)</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0; flex: 1; min-width: 100px;">
+                        <label for="cantidad">Cantidad</label>
+                        <input type="number" id="cantidad" name="cantidad" min="1" value="1" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Actualizar</button>
+                </form>
+
+                <div style="margin-top: 1rem; padding: 1rem; background: var(--bg-input); border-radius: var(--border-radius);">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                        <span>Stock Actual:</span>
+                        <strong>{{ repuesto.stock_actual }}</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span>Stock Minimo:</span>
+                        <strong>{{ repuesto.stock_minimo }}</strong>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Valorizacion -->
+        <section class="panel">
+            <header class="panel-header">
+                <h2>Valorizacion</h2>
+            </header>
+            <div class="panel-body">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                    <span>Valor en Compra:</span>
+                    <strong>{% if repuesto.precio_compra %}{{ currency_symbol }}{{ "%.2f"|format(repuesto.precio_compra * repuesto.stock_actual) }}{% else %}-{% endif %}</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span>Valor en Venta:</span>
+                    <strong style="color: var(--color-success);">{% if repuesto.precio_venta %}{{ currency_symbol }}{{ "%.2f"|format(repuesto.precio_venta * repuesto.stock_actual) }}{% else %}-{% endif %}</strong>
+                </div>
+            </div>
+        </section>
+    </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,60 @@
+services:
+  db:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-bikerzone}
+      POSTGRES_USER: ${DB_USER:-bikerzone_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-bikerzone}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --lc-collate=C --lc-ctype=C"
+    command: >
+      postgres
+      -c client_encoding=UTF-8
+      -c default_text_search_config=spanish
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-bikerzone_user} -d ${DB_NAME:-bikerzone}"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  web:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8001:8000"
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-bikerzone}
+      DB_USER: ${DB_USER:-bikerzone_user}
+      DB_PASSWORD: ${DB_PASSWORD:-bikerzone}
+      SECRET_KEY: ${SECRET_KEY:-cambia-esta-clave-secreta}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@bikerzone.com}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin123}
+      ENVIRONMENT: ${ENVIRONMENT:-development}
+      CURRENCY_SYMBOL: ${CURRENCY_SYMBOL:-Q}
+      CURRENCY_CODE: ${CURRENCY_CODE:-GTQ}
+      CURRENCY_DECIMALS: ${CURRENCY_DECIMALS:-2}
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./app:/app/app
+
+  nginx:
+    image: nginx:alpine
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8087:80"
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./app/static:/app/static:ro
+    depends_on:
+      - web
+
+volumes:
+  db_data:

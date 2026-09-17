@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+{% block title %}{{ orden.codigo }} - BikerZone{% endblock %}
+
+{% block breadcrumbs %}
+<nav class="breadcrumbs">
+    <a href="/dashboard">Inicio</a>
+    <span class="separator">/</span>
+    <a href="/ordenes-compra">Compras</a>
+    <span class="separator">/</span>
+    <span class="current">Detalle</span>
+</nav>
+{% endblock %}
+
+{% block content %}
+<header class="detail-header">
+    <div>
+        <a href="/ordenes-compra" class="link-arrow">&larr; Volver a ordenes de compra</a>
+        <h1>{{ orden.codigo }}</h1>
+        <div class="detail-meta">
+            <div class="detail-meta-item">
+                <span class="detail-meta-label">Proveedor</span>
+                <span class="detail-meta-value"><a href="/proveedores/{{ orden.proveedor.id }}">{{ orden.proveedor.nombre }}</a></span>
+            </div>
+            <div class="detail-meta-item">
+                <span class="detail-meta-label">Estado</span>
+                <span class="detail-meta-value"><span class="badge badge-info">{{ estados_labels.get(orden.estado, orden.estado) }}</span></span>
+            </div>
+            <div class="detail-meta-item">
+                <span class="detail-meta-label">Fecha</span>
+                <span class="detail-meta-value">{{ orden.created_at.strftime('%d/%m/%Y %H:%M') }}</span>
+            </div>
+        </div>
+    </div>
+</header>
+
+<div class="dashboard-row">
+    <div>
+        <!-- Flujo de estados -->
+        <section class="panel" style="margin-bottom: 1.5rem;">
+            <header class="panel-header">
+                <h2>Estado de la Orden</h2>
+            </header>
+            <div class="panel-body">
+                <div class="status-flow">
+                    {% set all_states = ['pending', 'sent', 'partial', 'received'] %}
+                    {% for state in all_states %}
+                    <div class="status-step {% if state == orden.estado %}current{% elif orden.estado in ['sent', 'partial', 'received'] and loop.index <= all_states.index(orden.estado) + 1 %}completed{% endif %}">
+                        {{ estados_labels.get(state, state) }}
+                    </div>
+                    {% endfor %}
+                </div>
+
+                {% if estados_posibles %}
+                <div style="margin-top: 1rem;">
+                    <form method="POST" action="/ordenes-compra/{{ orden.codigo }}/cambiar-estado" style="display: flex; gap: 0.5rem; align-items: flex-end; flex-wrap: wrap;">
+                        <div class="form-group" style="margin-bottom: 0; flex: 1; min-width: 200px;">
+                            <label for="nuevo_estado">Cambiar a:</label>
+                            <select id="nuevo_estado" name="nuevo_estado" required>
+                                {% for estado in estados_posibles %}
+                                <option value="{{ estado }}">{{ estados_labels.get(estado, estado) }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Cambiar Estado</button>
+                    </form>
+                </div>
+                {% endif %}
+
+                {% if orden.estado in ['sent', 'partial'] %}
+                <div style="margin-top: 1rem;">
+                    <form method="POST" action="/ordenes-compra/{{ orden.codigo }}/recibir">
+                        <button type="submit" class="btn btn-success"
+                                onclick="return confirm('Recibir mercancia y actualizar stock?')">
+                            Recibir Mercancia y Actualizar Stock
+                        </button>
+                    </form>
+                </div>
+                {% endif %}
+            </div>
+        </section>
+
+        <!-- Detalles de la orden -->
+        <section class="panel" style="margin-bottom: 1.5rem;">
+            <header class="panel-header">
+                <h2>Repuestos Solicitados</h2>
+            </header>
+            <div class="panel-body">
+                {% if detalles %}
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Codigo</th>
+                                <th>Repuesto</th>
+                                <th>Cantidad</th>
+                                <th>Precio Unit.</th>
+                                <th>Subtotal</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for d in detalles %}
+                            <tr>
+                                <td>{{ d.repuesto_codigo }}</td>
+                                <td>{{ d.repuesto_nombre }}</td>
+                                <td>{{ d.cantidad }}</td>
+                                <td>{{ currency_symbol }}{{ "%.2f"|format(d.precio_unitario) }}</td>
+                                <td>{{ currency_symbol }}{{ "%.2f"|format(d.subtotal) }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="4" style="text-align: right;"><strong>Subtotal:</strong></td>
+                                <td><strong>{{ currency_symbol }}{{ "%.2f"|format(orden.subtotal) }}</strong></td>
+                            </tr>
+                            <tr>
+                                <td colspan="4" style="text-align: right;"><strong>IVA (16%):</strong></td>
+                                <td><strong>{{ currency_symbol }}{{ "%.2f"|format(orden.iva) }}</strong></td>
+                            </tr>
+                            <tr>
+                                <td colspan="4" style="text-align: right;"><strong>Total:</strong></td>
+                                <td><strong style="color: var(--color-success); font-size: 1.1rem;">{{ currency_symbol }}{{ "%.2f"|format(orden.total) }}</strong></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                {% else %}
+                <p class="empty-state">No hay repuestos en esta orden.</p>
+                {% endif %}
+            </div>
+        </section>
+    </div>
+
+    <!-- Informacion adicional -->
+    <section class="panel">
+        <header class="panel-header">
+            <h2>Informacion</h2>
+        </header>
+        <div class="panel-body">
+            <p><strong>Proveedor:</strong> <a href="/proveedores/{{ orden.proveedor.id }}">{{ orden.proveedor.nombre }}</a></p>
+            {% if orden.proveedor.contacto %}
+            <p><strong>Contacto:</strong> {{ orden.proveedor.contacto }}</p>
+            {% endif %}
+            {% if orden.proveedor.telefono %}
+            <p><strong>Telefono:</strong> {{ orden.proveedor.telefono }}</p>
+            {% endif %}
+            {% if orden.proveedor.email %}
+            <p><strong>Email:</strong> {{ orden.proveedor.email }}</p>
+            {% endif %}
+
+            {% if orden.notas %}
+            <div style="margin-top: 1rem;">
+                <p><strong>Notas:</strong></p>
+                <p style="padding: 0.75rem; background: var(--bg-input); border-radius: var(--border-radius);">{{ orden.notas }}</p>
+            </div>
+            {% endif %}
+
+            <div style="margin-top: 1.5rem;">
+                <a href="/proveedores/{{ orden.proveedor.id }}" class="btn btn-secondary btn-sm">Ver Proveedor</a>
+            </div>
+        </div>
+    </section>
+</div>
+
+{% endblock %}

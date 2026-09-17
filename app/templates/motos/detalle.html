@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+{% block title %}{{ moto.marca }} {{ moto.modelo }} - BikerZone{% endblock %}
+
+{% block breadcrumbs %}
+<nav class="breadcrumbs">
+    <a href="/dashboard">Inicio</a>
+    <span class="separator">/</span>
+    <a href="/motos">Motos</a>
+    <span class="separator">/</span>
+    <span class="current">Detalle</span>
+</nav>
+{% endblock %}
+
+{% block content %}
+<header class="detail-header">
+    <div>
+        <a href="/motos" class="link-arrow">&larr; Volver a motos</a>
+        <h1>{{ moto.marca }} {{ moto.modelo }}</h1>
+        <div class="detail-meta">
+            <div class="detail-meta-item">
+                <span class="detail-meta-label">Cliente</span>
+                <span class="detail-meta-value"><a href="/clientes/{{ moto.cliente.id }}">{{ moto.cliente.nombre }}</a></span>
+            </div>
+            {% if moto.placa %}
+            <div class="detail-meta-item">
+                <span class="detail-meta-label">Placa</span>
+                <span class="detail-meta-value">{{ moto.placa }}</span>
+            </div>
+            {% endif %}
+            {% if moto.anio %}
+            <div class="detail-meta-item">
+                <span class="detail-meta-label">Año</span>
+                <span class="detail-meta-value">{{ moto.anio }}</span>
+            </div>
+            {% endif %}
+            <div class="detail-meta-item">
+                <span class="detail-meta-label">Kilometraje</span>
+                <span class="detail-meta-value">{{ moto.kilometraje|int }} km</span>
+            </div>
+        </div>
+    </div>
+    <div class="form-actions">
+        <a href="/motos/{{ moto.id }}/editar" class="btn btn-secondary">Editar</a>
+        <form method="POST" action="/motos/{{ moto.id }}/eliminar" style="display:inline"
+              onsubmit="return confirm('Eliminar esta moto? Se eliminaran todas sus ordenes.')">
+            <button type="submit" class="btn btn-danger btn-sm">Eliminar</button>
+        </form>
+    </div>
+</header>
+
+<div class="dashboard-row">
+    <div>
+        {% if moto.color or moto.vin or moto.notas %}
+        <div class="card" style="margin-bottom: 1.5rem;">
+            <div class="card-body">
+                {% if moto.color %}<p><strong>Color:</strong> {{ moto.color }}</p>{% endif %}
+                {% if moto.vin %}<p><strong>VIN:</strong> {{ moto.vin }}</p>{% endif %}
+                {% if moto.notas %}<p><strong>Notas:</strong> {{ moto.notas }}</p>{% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        <section class="panel">
+            <header class="panel-header">
+                <h2>Ordenes de Servicio ({{ ordenes|length }})</h2>
+                <a href="/ordenes/nueva?moto_id={{ moto.id }}&client_id={{ moto.client_id }}" class="btn btn-sm btn-primary">Nueva Orden</a>
+            </header>
+            <div class="panel-body">
+                {% if ordenes %}
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Codigo</th>
+                                <th>Estado</th>
+                                <th>Falla</th>
+                                <th>Fecha</th>
+                                <th>Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for orden in ordenes %}
+                            <tr>
+                                <td><a href="/ordenes/{{ orden.codigo }}">{{ orden.codigo }}</a></td>
+                                <td><span class="badge badge-info">{{ orden.estado }}</span></td>
+                                <td>{{ orden.falla_reportada[:50] }}{% if orden.falla_reportada|length > 50 %}...{% endif %}</td>
+                                <td>{{ orden.created_at.strftime('%d/%m/%Y') }}</td>
+                                <td>{% if orden.precio_final %}{{ currency_symbol }}{{ "%.2f"|format(orden.precio_final) }}{% elif orden.presupuesto %}{{ currency_symbol }}{{ "%.2f"|format(orden.presupuesto) }}{% else %}-{% endif %}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="empty-state">No hay ordenes de servicio para esta moto.</p>
+                {% endif %}
+            </div>
+        </section>
+    </div>
+
+    <section class="panel">
+        <header class="panel-header">
+            <h2>Informacion del Cliente</h2>
+        </header>
+        <div class="panel-body">
+            <p><strong>Nombre:</strong> <a href="/clientes/{{ moto.cliente.id }}">{{ moto.cliente.nombre }}</a></p>
+            {% if moto.cliente.telefono %}
+            <p><strong>Telefono:</strong> {{ moto.cliente.telefono }}</p>
+            {% endif %}
+            {% if moto.cliente.email %}
+            <p><strong>Email:</strong> {{ moto.cliente.email }}</p>
+            {% endif %}
+            {% if moto.cliente.direccion %}
+            <p><strong>Direccion:</strong> {{ moto.cliente.direccion }}</p>
+            {% endif %}
+
+            <div style="margin-top: 1.5rem;">
+                <a href="/clientes/{{ moto.cliente.id }}" class="btn btn-secondary btn-sm">Ver Cliente Completo</a>
+            </div>
+        </div>
+    </section>
+</div>
+
+{% endblock %}

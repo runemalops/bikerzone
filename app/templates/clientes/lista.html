@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block title %}Clientes - BikerZone{% endblock %}
+
+{% block breadcrumbs %}
+<nav class="breadcrumbs">
+    <a href="/dashboard">Inicio</a>
+    <span class="separator">/</span>
+    <span class="current">Clientes</span>
+</nav>
+{% endblock %}
+
+{% block content %}
+<header class="page-header">
+    <div class="page-header-content">
+        <h1>Clientes</h1>
+        <p>{{ total }} clientes registrados</p>
+    </div>
+    <a href="/clientes/nueva" class="btn btn-primary">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+        Nuevo Cliente
+    </a>
+</header>
+
+<form method="GET" action="/clientes" class="filters">
+    <div class="form-group">
+        <label>Buscar</label>
+        <input type="text" name="search" value="{{ search }}" placeholder="Nombre, telefono o email...">
+    </div>
+    <button type="submit" class="btn btn-primary">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        Buscar
+    </button>
+    {% if search %}
+    <a href="/clientes" class="btn btn-secondary">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+        Limpiar
+    </a>
+    {% endif %}
+</form>
+
+<div class="card">
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Telefono</th>
+                    <th>Email</th>
+                    <th>Motos</th>
+                    <th>Ordenes</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for cliente in clientes %}
+                <tr>
+                    <td><strong>{{ cliente.nombre }}</strong></td>
+                    <td>{% if cliente.telefono %}+502 {{ cliente.telefono }}{% else %}-{% endif %}</td>
+                    <td>{{ cliente.email or '-' }}</td>
+                    <td><span class="badge badge-info">{{ cliente.total_motos }}</span></td>
+                    <td><span class="badge badge-secondary">{{ cliente.total_ordenes }}</span></td>
+                    <td>
+                        <a href="/clientes/{{ cliente.id }}" class="btn btn-sm btn-primary">Ver</a>
+                        <a href="/clientes/{{ cliente.id }}/editar" class="btn btn-sm btn-secondary">Editar</a>
+                    </td>
+                </tr>
+                {% endfor %}
+                {% if not clientes %}
+                <tr>
+                    <td colspan="6" class="empty-state">
+                        {% if search %}
+                        No se encontraron clientes para "{{ search }}"
+                        {% else %}
+                        No hay clientes registrados. <a href="/clientes/nueva">Agregar uno</a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% if total_pages > 1 %}
+<div class="pagination">
+    {% if page > 1 %}
+    <a href="/clientes?page={{ page - 1 }}{% if search %}&search={{ search }}{% endif %}">Anterior</a>
+    {% endif %}
+
+    {% for p in range(1, total_pages + 1) %}
+        {% if p == page %}
+        <span class="active">{{ p }}</span>
+        {% elif p <= 3 or p > total_pages - 3 or (p >= page - 2 and p <= page + 2) %}
+        <a href="/clientes?page={{ p }}{% if search %}&search={{ search }}{% endif %}">{{ p }}</a>
+        {% elif p == 4 or p == total_pages - 3 %}
+        <span>...</span>
+        {% endif %}
+    {% endfor %}
+
+    {% if page < total_pages %}
+    <a href="/clientes?page={{ page + 1 }}{% if search %}&search={{ search }}{% endif %}">Siguiente</a>
+    {% endif %}
+</div>
+{% endif %}
+
+{% endblock %}

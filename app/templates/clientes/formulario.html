@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block title %}{% if cliente %}Editar Cliente{% else %}Nuevo Cliente{% endif %} - BikerZone{% endblock %}
+
+{% block breadcrumbs %}
+<nav class="breadcrumbs">
+    <a href="/dashboard">Inicio</a>
+    <span class="separator">/</span>
+    <a href="/clientes">Clientes</a>
+    <span class="separator">/</span>
+    <span class="current">{% if cliente %}Editar{% else %}Nuevo{% endif %}</span>
+</nav>
+{% endblock %}
+
+{% block content %}
+<header class="page-header">
+    <div class="page-header-content">
+        <h1>{% if cliente %}Editar Cliente{% else %}Nuevo Cliente{% endif %}</h1>
+        <p>{% if cliente %}Actualiza la información del cliente{% else %}Registra un nuevo cliente en el sistema{% endif %}</p>
+    </div>
+</header>
+
+<div class="card">
+    <div class="card-body">
+        <form method="POST" action="{% if cliente %}/clientes/{{ cliente.id }}/editar{% else %}/clientes/nueva{% endif %}">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="nombre">Nombre *</label>
+                    <input type="text" id="nombre" name="nombre" required
+                           value="{{ cliente.nombre if cliente else '' }}"
+                           placeholder="Nombre completo">
+                </div>
+
+                <div class="form-group">
+                    <label for="telefono">Telefono</label>
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <span style="padding: 0.6rem 0.75rem; background: var(--bg-input); border: 2px solid var(--border-color); border-radius: var(--border-radius); color: var(--text-secondary); font-size: 0.9rem; white-space: nowrap;">+502</span>
+                        <input type="tel" id="telefono" name="telefono"
+                               value="{{ cliente.telefono if cliente and cliente.telefono else '' }}"
+                               placeholder="12345678"
+                               pattern="[0-9]{8}"
+                               maxlength="8"
+                               style="flex: 1;">
+                    </div>
+                    <small style="color: var(--text-muted); font-size: 0.75rem; margin-top: 0.25rem; display: block;">Formato: 8 digitos (ej: 12345678)</small>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" name="email"
+                           value="{{ cliente.email if cliente and cliente.email else '' }}"
+                           placeholder="correo@ejemplo.com">
+                </div>
+
+                <div class="form-group">
+                    <label for="nit">NIT</label>
+                    <input type="text" id="nit" name="nit"
+                           value="{{ cliente.rfc if cliente and cliente.rfc else '' }}"
+                           placeholder="1234567-8"
+                           pattern="[0-9]{1,10}-?[0-9Kk]">
+                    <small style="color: var(--text-muted); font-size: 0.75rem; margin-top: 0.25rem; display: block;">Formato: 1234567-8 o 12345678</small>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="direccion">Direccion</label>
+                <input type="text" id="direccion" name="direccion"
+                       value="{{ cliente.direccion if cliente and cliente.direccion else '' }}"
+                       placeholder="Calle, numero, colonia, ciudad">
+            </div>
+
+            <div class="form-group">
+                <label for="notas">Notas</label>
+                <textarea id="notas" name="notas"
+                          placeholder="Informacion adicional sobre el cliente...">{{ cliente.notas if cliente and cliente.notas else '' }}</textarea>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>
+                    </svg>
+                    {% if cliente %}Guardar Cambios{% else %}Crear Cliente{% endif %}
+                </button>
+                <a href="{% if cliente %}/clientes/{{ cliente.id }}{% else %}/clientes{% endif %}" class="btn btn-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}

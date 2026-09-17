@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}{{ proveedor.nombre }} - BikerZone{% endblock %}
+
+{% block breadcrumbs %}
+<nav class="breadcrumbs">
+    <a href="/dashboard">Inicio</a>
+    <span class="separator">/</span>
+    <a href="/proveedores">Proveedores</a>
+    <span class="separator">/</span>
+    <span class="current">Detalle</span>
+</nav>
+{% endblock %}
+
+{% block content %}
+<header class="detail-header">
+    <div>
+        <a href="/proveedores" class="link-arrow">&larr; Volver a proveedores</a>
+        <h1>{{ proveedor.nombre }}</h1>
+        <div class="detail-meta">
+            {% if proveedor.contacto %}
+            <div class="detail-meta-item">
+                <span class="detail-meta-label">Contacto</span>
+                <span class="detail-meta-value">{{ proveedor.contacto }}</span>
+            </div>
+            {% endif %}
+            {% if proveedor.telefono %}
+            <div class="detail-meta-item">
+                <span class="detail-meta-label">Telefono</span>
+                <span class="detail-meta-value">+502 {{ proveedor.telefono }}</span>
+            </div>
+            {% endif %}
+            {% if proveedor.email %}
+            <div class="detail-meta-item">
+                <span class="detail-meta-label">Email</span>
+                <span class="detail-meta-value">{{ proveedor.email }}</span>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    <div class="form-actions">
+        <a href="/proveedores/{{ proveedor.id }}/editar" class="btn btn-secondary">Editar</a>
+        {% if user.rol == 'admin' %}
+        <form method="POST" action="/proveedores/{{ proveedor.id }}/eliminar" style="display:inline"
+              onsubmit="return confirm('Eliminar este proveedor?')">
+            <button type="submit" class="btn btn-danger btn-sm">Eliminar</button>
+        </form>
+        {% endif %}
+    </div>
+</header>
+
+{% if proveedor.direccion or proveedor.rfc or proveedor.notas %}
+<div class="card" style="margin-bottom: 1.5rem;">
+    <div class="card-body">
+        {% if proveedor.direccion %}<p><strong>Direccion:</strong> {{ proveedor.direccion }}</p>{% endif %}
+        {% if proveedor.rfc %}<p><strong>RFC:</strong> {{ proveedor.rfc }}</p>{% endif %}
+        {% if proveedor.notas %}<p><strong>Notas:</strong> {{ proveedor.notas }}</p>{% endif %}
+    </div>
+</div>
+{% endif %}
+
+<section class="panel">
+    <header class="panel-header">
+        <h2>Ordenes de Compra ({{ ordenes|length }})</h2>
+        <a href="/ordenes-compra/nueva?proveedor_id={{ proveedor.id }}" class="btn btn-sm btn-primary">Nueva Orden</a>
+    </header>
+    <div class="panel-body">
+        {% if ordenes %}
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Codigo</th>
+                        <th>Estado</th>
+                        <th>Total</th>
+                        <th>Fecha</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for orden in ordenes %}
+                    <tr>
+                        <td><a href="/ordenes-compra/{{ orden.codigo }}">{{ orden.codigo }}</a></td>
+                        <td><span class="badge badge-info">{{ orden.estado }}</span></td>
+                        <td>{{ currency_symbol }}{{ "%.2f"|format(orden.total) }}</td>
+                        <td>{{ orden.created_at.strftime('%d/%m/%Y') }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="empty-state">No hay ordenes de compra para este proveedor.</p>
+        {% endif %}
+    </div>
+</section>
+
+{% endblock %}

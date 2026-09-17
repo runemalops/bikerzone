@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+{% block title %}Reporte de Ventas - BikerZone{% endblock %}
+
+{% block breadcrumbs %}
+<nav class="breadcrumbs">
+    <a href="/dashboard">Inicio</a>
+    <span class="separator">/</span>
+    <a href="/reportes">Reportes</a>
+    <span class="separator">/</span>
+    <span class="current">Ventas</span>
+</nav>
+{% endblock %}
+
+{% block head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
+{% block content %}
+<header class="page-header">
+    <div class="page-header-content">
+        <a href="/reportes" class="link-arrow">&larr; Volver a reportes</a>
+        <h1>Reporte de Ventas</h1>
+    </div>
+    <a href="/reportes/export/ordenes/csv" class="btn btn-secondary">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        Exportar CSV
+    </a>
+</header>
+
+<div class="dashboard-grid">
+    <div class="kpi-card">
+        <div class="kpi-content">
+            <span class="kpi-value">{{ stats.ordenes_activas }}</span>
+            <span class="kpi-label">Ordenes Activas</span>
+        </div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-content">
+            <span class="kpi-value">{{ stats.completadas_mes }}</span>
+            <span class="kpi-label">Completadas Mes</span>
+        </div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-content">
+            <span class="kpi-value">{{ currency_symbol }}{{ "%.0f"|format(stats.ingresos_mes) }}</span>
+            <span class="kpi-label">Ingresos Mes</span>
+        </div>
+    </div>
+</div>
+
+<div class="dashboard-row" style="margin-bottom: 1.5rem;">
+    <section class="panel">
+        <header class="panel-header">
+            <h2>Ingresos por Mes</h2>
+        </header>
+        <div class="panel-body" style="height: 300px;">
+            <canvas id="chartIngresos"></canvas>
+        </div>
+    </section>
+
+    <section class="panel">
+        <header class="panel-header">
+            <h2>Ventas por Tecnico</h2>
+        </header>
+        <div class="panel-body" style="height: 300px;">
+            <canvas id="chartTecnicos"></canvas>
+        </div>
+    </section>
+</div>
+
+<section class="panel">
+    <header class="panel-header">
+        <h2>Top Clientes</h2>
+    </header>
+    <div class="panel-body">
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Cliente</th>
+                        <th>Ordenes</th>
+                        <th>Total Gastado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for c in top_clientes %}
+                    <tr>
+                        <td>{{ loop.index }}</td>
+                        <td><strong>{{ c.nombre }}</strong></td>
+                        <td>{{ c.ordenes }}</td>
+                        <td>{{ currency_symbol }}{{ "%.2f"|format(c.gastado) }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+const ordenesMes = {{ ordenes_mes | tojson }};
+const ventasTecnico = {{ ventas_tecnico | tojson }};
+
+new Chart(document.getElementById('chartIngresos'), {
+    type: 'line',
+    data: {
+        labels: ordenesMes.map(m => m.mes),
+        datasets: [{
+            label: 'Ingresos ($)',
+            data: ordenesMes.map(m => m.ingresos),
+            borderColor: '#27ae60',
+            backgroundColor: 'rgba(39, 174, 96, 0.1)',
+            fill: true,
+            tension: 0.4
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: true } }
+    }
+});
+
+new Chart(document.getElementById('chartTecnicos'), {
+    type: 'bar',
+    data: {
+        labels: ventasTecnico.map(t => t.tecnico),
+        datasets: [{
+            label: 'Ventas ($)',
+            data: ventasTecnico.map(t => t.ventas),
+            backgroundColor: '#c0392b',
+            borderRadius: 4
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        indexAxis: 'y',
+        plugins: { legend: { display: false } },
+        scales: { x: { beginAtZero: true } }
+    }
+});
+</script>
+{% endblock %}

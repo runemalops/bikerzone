@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+{% block title %}Ordenes de Servicio - BikerZone{% endblock %}
+
+{% block breadcrumbs %}
+<nav class="breadcrumbs">
+    <a href="/dashboard">Inicio</a>
+    <span class="separator">/</span>
+    <a href="/ordenes">Ordenes</a>
+    <span class="separator">/</span>
+    <span class="current">Lista</span>
+</nav>
+{% endblock %}
+
+{% block content %}
+<header class="page-header">
+    <div class="page-header-content">
+        <h1>Ordenes de Servicio</h1>
+        <p>{{ total }} ordenes registradas</p>
+    </div>
+    <div style="display: flex; gap: 0.5rem;">
+        <a href="/ordenes/export/csv?estado={{ estado }}&fecha_desde={{ fecha_desde }}&fecha_hasta={{ fecha_hasta }}" class="btn btn-secondary">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+            CSV
+        </a>
+        <a href="/ordenes/nueva" class="btn btn-primary">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            Nueva Orden
+        </a>
+    </div>
+</header>
+
+<form method="GET" action="/ordenes" class="filters">
+    <div class="form-group">
+        <label>Buscar</label>
+        <input type="text" name="search" value="{{ search }}" placeholder="Codigo, cliente o moto...">
+    </div>
+    <div class="form-group">
+        <label>Estado</label>
+        <select name="estado">
+            <option value="">Todos los estados</option>
+            {% for key, label in estados.items() %}
+            <option value="{{ key }}" {% if estado == key %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="form-group">
+        <label>Tecnico</label>
+        <select name="technician_id">
+            <option value="">Todos los tecnicos</option>
+            {% for t in tecnicos %}
+            <option value="{{ t.id }}" {% if tecnico_id == t.id %}selected{% endif %}>{{ t.nombre }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="form-group">
+        <label>Fecha Desde</label>
+        <input type="date" name="fecha_desde" value="{{ fecha_desde }}">
+    </div>
+    <div class="form-group">
+        <label>Fecha Hasta</label>
+        <input type="date" name="fecha_hasta" value="{{ fecha_hasta }}">
+    </div>
+    <button type="submit" class="btn btn-primary">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        Filtrar
+    </button>
+    {% if search or estado or tecnico_id or fecha_desde or fecha_hasta %}
+    <a href="/ordenes" class="btn btn-secondary">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+        Limpiar
+    </a>
+    {% endif %}
+</form>
+
+<div class="card">
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr>
+                    <th>Codigo</th>
+                    <th>Cliente</th>
+                    <th>Moto</th>
+                    <th>Falla</th>
+                    <th>Estado</th>
+                    <th>Presupuesto</th>
+                    <th>Total</th>
+                    <th>Fecha</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for orden in ordenes %}
+                <tr>
+                    <td><strong><a href="/ordenes/{{ orden.codigo }}">{{ orden.codigo }}</a></strong></td>
+                    <td>{{ orden.cliente_nombre }}</td>
+                    <td>{{ orden.moto_info }}</td>
+                    <td style="max-width: 200px;">{{ orden.falla_reportada[:40] }}{% if orden.falla_reportada|length > 40 %}...{% endif %}</td>
+                    <td><span class="badge badge-info">{{ orden.estado_label }}</span></td>
+                    <td>{% if orden.presupuesto %}{{ currency_symbol }}{{ "%.2f"|format(orden.presupuesto) }}{% else %}-{% endif %}</td>
+                    <td>{% if orden.precio_final %}{{ currency_symbol }}{{ "%.2f"|format(orden.precio_final) }}{% else %}-{% endif %}</td>
+                    <td>{{ orden.created_at.strftime('%d/%m/%Y') }}</td>
+                    <td>
+                        <a href="/ordenes/{{ orden.codigo }}" class="btn btn-sm btn-primary">Ver</a>
+                    </td>
+                </tr>
+                {% endfor %}
+                {% if not ordenes %}
+                <tr>
+                    <td colspan="9" class="empty-state">
+                        {% if search or estado or tecnico_id %}
+                        No se encontraron ordenes
+                        {% else %}
+                        No hay ordenes registradas. <a href="/ordenes/nueva">Crear una</a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% if total_pages > 1 %}
+<div class="pagination">
+    {% if page > 1 %}
+    <a href="/ordenes?page={{ page - 1 }}{% if search %}&search={{ search }}{% endif %}{% if estado %}&estado={{ estado }}{% endif %}">Anterior</a>
+    {% endif %}
+
+    {% for p in range(1, total_pages + 1) %}
+        {% if p == page %}
+        <span class="active">{{ p }}</span>
+        {% elif p <= 3 or p > total_pages - 3 or (p >= page - 2 and p <= page + 2) %}
+        <a href="/ordenes?page={{ p }}{% if search %}&search={{ search }}{% endif %}{% if estado %}&estado={{ estado }}{% endif %}">{{ p }}</a>
+        {% elif p == 4 or p == total_pages - 3 %}
+        <span>...</span>
+        {% endif %}
+    {% endfor %}
+
+    {% if page < total_pages %}
+    <a href="/ordenes?page={{ page + 1 }}{% if search %}&search={{ search }}{% endif %}{% if estado %}&estado={{ estado }}{% endif %}">Siguiente</a>
+    {% endif %}
+</div>
+{% endif %}
+
+{% endblock %}

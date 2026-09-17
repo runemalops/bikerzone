@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+{% block title %}Reporte de Inventario - BikerZone{% endblock %}
+
+{% block breadcrumbs %}
+<nav class="breadcrumbs">
+    <a href="/dashboard">Inicio</a>
+    <span class="separator">/</span>
+    <a href="/reportes">Reportes</a>
+    <span class="separator">/</span>
+    <span class="current">Inventario</span>
+</nav>
+{% endblock %}
+
+{% block head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
+{% block content %}
+<header class="page-header">
+    <div class="page-header-content">
+        <a href="/reportes" class="link-arrow">&larr; Volver a reportes</a>
+        <h1>Reporte de Inventario</h1>
+    </div>
+    <a href="/reportes/export/inventario/csv" class="btn btn-secondary">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        Exportar CSV
+    </a>
+</header>
+
+<div class="dashboard-grid">
+    <div class="kpi-card">
+        <div class="kpi-content">
+            <span class="kpi-value">{{ stats.total_repuestos }}</span>
+            <span class="kpi-label">Total Repuestos</span>
+        </div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-content">
+            <span class="kpi-value">{{ currency_symbol }}{{ "%.0f"|format(stats.valor_compra) }}</span>
+            <span class="kpi-label">Valor en Compra</span>
+        </div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-content">
+            <span class="kpi-value">{{ currency_symbol }}{{ "%.0f"|format(stats.valor_venta) }}</span>
+            <span class="kpi-label">Valor en Venta</span>
+        </div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-content">
+            <span class="kpi-value" style="color: var(--color-danger);">{{ stats.sin_stock }}</span>
+            <span class="kpi-label">Sin Stock</span>
+        </div>
+    </div>
+</div>
+
+<div class="dashboard-row" style="margin-bottom: 1.5rem;">
+    <section class="panel">
+        <header class="panel-header">
+            <h2>Stock por Categoria</h2>
+        </header>
+        <div class="panel-body" style="height: 300px;">
+            <canvas id="chartCategorias"></canvas>
+        </div>
+    </section>
+
+    <section class="panel">
+        <header class="panel-header">
+            <h2>Productos con Stock Bajo</h2>
+        </header>
+        <div class="panel-body">
+            {% if stock_bajo %}
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Codigo</th>
+                            <th>Nombre</th>
+                            <th>Stock</th>
+                            <th>Minimo</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for r in stock_bajo %}
+                        <tr>
+                            <td>{{ r.codigo }}</td>
+                            <td>{{ r.nombre }}</td>
+                            <td>{{ r.stock_actual }}</td>
+                            <td>{{ r.stock_minimo }}</td>
+                            <td>
+                                {% if r.stock_actual == 0 %}
+                                <span class="badge badge-danger">Sin Stock</span>
+                                {% else %}
+                                <span class="badge badge-warning">Bajo</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="empty-state">No hay productos con stock bajo.</p>
+            {% endif %}
+        </div>
+    </section>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+const stockCategoria = {{ stock_categoria | tojson }};
+
+const colores = ['#c0392b', '#2c3e50', '#27ae60', '#f39c12', '#2980b9', '#8e44ad', '#16a085', '#d35400', '#7f8c8d'];
+
+new Chart(document.getElementById('chartCategorias'), {
+    type: 'bar',
+    data: {
+        labels: stockCategoria.map(c => c.categoria),
+        datasets: [{
+            label: 'Stock',
+            data: stockCategoria.map(c => c.stock),
+            backgroundColor: colores.slice(0, stockCategoria.length),
+            borderRadius: 4
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: true } }
+    }
+});
+</script>
+{% endblock %}

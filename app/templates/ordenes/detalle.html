@@ -1,0 +1,253 @@
+{% extends "base.html" %}
+{% block title %}{{ orden.codigo }} - BikerZone{% endblock %}
+
+{% block breadcrumbs %}
+<nav class="breadcrumbs">
+    <a href="/dashboard">Inicio</a>
+    <span class="separator">/</span>
+    <a href="/ordenes">Ordenes</a>
+    <span class="separator">/</span>
+    <span class="current">Detalle</span>
+</nav>
+{% endblock %}
+
+{% block content %}
+<header class="detail-header">
+    <div>
+        <a href="/ordenes" class="link-arrow">&larr; Volver a ordenes</a>
+        <h1>{{ orden.codigo }}</h1>
+        <div class="detail-meta">
+            <div class="detail-meta-item">
+                <span class="detail-meta-label">Cliente</span>
+                <span class="detail-meta-value"><a href="/clientes/{{ orden.cliente.id }}">{{ orden.cliente.nombre }}</a></span>
+            </div>
+            <div class="detail-meta-item">
+                <span class="detail-meta-label">Moto</span>
+                <span class="detail-meta-value"><a href="/motos/{{ orden.moto.id }}">{{ orden.moto.marca }} {{ orden.moto.modelo }}</a></span>
+            </div>
+            <div class="detail-meta-item">
+                <span class="detail-meta-label">Estado</span>
+                <span class="detail-meta-value"><span class="badge badge-info">{{ estados_labels.get(orden.estado, orden.estado) }}</span></span>
+            </div>
+            <div class="detail-meta-item">
+                <span class="detail-meta-label">Fecha</span>
+                <span class="detail-meta-value">{{ orden.created_at.strftime('%d/%m/%Y %H:%M') }}</span>
+            </div>
+        </div>
+    </div>
+    <div class="form-actions">
+        <a href="/ordenes/{{ orden.codigo }}/pdf" class="btn btn-secondary btn-sm" target="_blank">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
+            </svg>
+            PDF
+        </a>
+        {% if user.rol == 'admin' %}
+        <form method="POST" action="/ordenes/{{ orden.codigo }}/eliminar" style="display:inline"
+              onsubmit="return confirm('Eliminar esta orden?')">
+            <button type="submit" class="btn btn-danger btn-sm">Eliminar</button>
+        </form>
+        {% endif %}
+    </div>
+</header>
+
+<div class="dashboard-row">
+    <div>
+        <!-- Flujo de estados -->
+        <section class="panel" style="margin-bottom: 1.5rem;">
+            <header class="panel-header">
+                <h2>Flujo de Estados</h2>
+            </header>
+            <div class="panel-body">
+                <div class="status-flow">
+                    {% set all_states = ['received', 'diagnosed', 'quote_sent', 'quote_approved', 'in_progress', 'repairing', 'ready', 'delivered'] %}
+                    {% set current_index = all_states.index(orden.estado) if orden.estado in all_states else -1 %}
+                    {% for state in all_states %}
+                    {% set state_index = loop.index0 %}
+                    <div class="status-step {% if state_index == current_index %}current{% elif state_index < current_index %}completed{% else %}pending{% endif %}">
+                        <span class="step-icon">
+                            {% if state_index < current_index %}
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                            {% elif state_index == current_index %}
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><circle cx="12" cy="12" r="3"/></svg>
+                            {% else %}
+                            {{ state_index + 1 }}
+                            {% endif %}
+                        </span>
+                        <span class="step-label">{{ estados_labels.get(state, state) }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                {% if estados_posibles %}
+                <div class="state-actions">
+                    <form method="POST" action="/ordenes/{{ orden.codigo }}/cambiar-estado" style="display: flex; gap: 0.75rem; align-items: flex-end; flex-wrap: wrap; width: 100%;">
+                        <div class="form-group" style="margin-bottom: 0; flex: 2; min-width: 200px;">
+                            <label for="nuevo_estado">Cambiar estado a:</label>
+                            <select id="nuevo_estado" name="nuevo_estado" required>
+                                {% for estado in estados_posibles %}
+                                <option value="{{ estado }}">{{ estados_labels.get(estado, estado) }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0; flex: 3; min-width: 250px;">
+                            <label for="observaciones">Observaciones:</label>
+                            <input type="text" id="observaciones" name="observaciones" placeholder="Agregar notas sobre el cambio de estado...">
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                            </svg>
+                            Cambiar Estado
+                        </button>
+                    </form>
+                </div>
+                {% endif %}
+            </div>
+        </section>
+
+        <!-- Informacion de la orden -->
+        <section class="panel" style="margin-bottom: 1.5rem;">
+            <header class="panel-header">
+                <h2>Detalle</h2>
+            </header>
+            <div class="panel-body">
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="display: block; font-size: 0.85rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.5rem;">Falla Reportada</label>
+                    <p style="padding: 0.875rem 1rem; background: var(--bg-input); border-radius: var(--border-radius); border-left: 3px solid var(--color-secondary);">{{ orden.falla_reportada }}</p>
+                </div>
+
+                {% if orden.diagnostico %}
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="display: block; font-size: 0.85rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.5rem;">Diagnostico</label>
+                    <p style="padding: 0.875rem 1rem; background: var(--bg-input); border-radius: var(--border-radius); border-left: 3px solid var(--color-info);">{{ orden.diagnostico }}</p>
+                </div>
+                {% endif %}
+
+                <form method="POST" action="/ordenes/{{ orden.codigo }}/editar">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="diagnostico">Diagnostico del Tecnico</label>
+                            <textarea id="diagnostico" name="diagnostico" placeholder="Describe el diagnostico tecnico...">{{ orden.diagnostico or '' }}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="presupuesto">Presupuesto ({{ currency_symbol }})</label>
+                            <input type="number" id="presupuesto" name="presupuesto" step="0.01" min="0"
+                                   value="{{ orden.presupuesto if orden.presupuesto else '' }}" placeholder="0.00">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="precio_final">Precio Final ({{ currency_symbol }})</label>
+                            <input type="number" id="precio_final" name="precio_final" step="0.01" min="0"
+                                   value="{{ orden.precio_final if orden.precio_final else '' }}" placeholder="0.00">
+                        </div>
+                        <div class="form-group">
+                            <label for="kilometraje_salida">Kilometraje de Salida</label>
+                            <input type="number" id="kilometraje_salida" name="kilometraje_salida" min="0"
+                                   value="{{ orden.kilometraje_salida if orden.kilometraje_salida else '' }}" placeholder="Km al entregar">
+                        </div>
+                    </div>
+                    <div class="form-actions" style="margin-top: 0; padding-top: 1rem; border-top: none;">
+                        <button type="submit" class="btn btn-primary">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>
+                            </svg>
+                            Guardar Cambios
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+        <!-- Repuestos utilizados -->
+        <section class="panel">
+            <header class="panel-header">
+                <h2>Repuestos Utilizados</h2>
+            </header>
+            <div class="panel-body">
+                {% if repuestos %}
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Repuesto</th>
+                                <th>Cantidad</th>
+                                <th>Precio Unit.</th>
+                                <th>Subtotal</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for r in repuestos %}
+                            <tr>
+                                <td><strong>{{ r.repuesto_nombre }}</strong></td>
+                                <td>{{ r.cantidad }}</td>
+                                <td>{{ currency_symbol }}{{ "%.2f"|format(r.precio_unitario) }}</td>
+                                <td><strong>{{ currency_symbol }}{{ "%.2f"|format(r.subtotal) }}</strong></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="empty-state">No se han agregado repuestos a esta orden.</p>
+                {% endif %}
+
+                <!-- Agregar repuesto -->
+                <form method="POST" action="/ordenes/{{ orden.codigo }}/agregar-repuesto" style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border-color); display: flex; gap: 0.75rem; align-items: flex-end; flex-wrap: wrap;">
+                    <div class="form-group" style="margin-bottom: 0; flex: 2; min-width: 200px;">
+                        <label for="repuesto_id">Seleccionar Repuesto</label>
+                        <select id="repuesto_id" name="repuesto_id" required>
+                            <option value="">Buscar repuesto...</option>
+                            {% for r in repuestos_list %}
+                            <option value="{{ r.id }}">{{ r.nombre }} - Stock: {{ r.stock_actual }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0; flex: 1; min-width: 100px;">
+                        <label for="cantidad">Cantidad</label>
+                        <input type="number" id="cantidad" name="cantidad" min="1" value="1" required>
+                    </div>
+                    <button type="submit" class="btn btn-success">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                        </svg>
+                        Agregar
+                    </button>
+                </form>
+            </div>
+        </section>
+    </div>
+
+    <!-- Historial -->
+    <section class="panel">
+        <header class="panel-header">
+            <h2>Historial de Cambios</h2>
+        </header>
+        <div class="panel-body">
+            {% if historial %}
+            <div class="timeline">
+                {% for h in historial %}
+                <div class="timeline-item" style="animation-delay: {{ loop.index0 * 0.1 }}s;">
+                    <div class="timeline-dot"></div>
+                    <div class="timeline-content">
+                        <div class="timeline-header">
+                            <span class="timeline-title">{{ h.estado_label }}</span>
+                            <span class="timeline-date">{{ h.fecha.strftime('%d/%m/%Y %H:%M') }}</span>
+                        </div>
+                        <div class="timeline-user">Por: {{ h.usuario_nombre }}</div>
+                        {% if h.observaciones %}
+                        <div class="timeline-note">{{ h.observaciones }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="empty-state">No hay historial de cambios.</p>
+            {% endif %}
+        </div>
+    </section>
+</div>
+
+{% endblock %}
