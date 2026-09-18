@@ -41,14 +41,15 @@
             <div class="form-row">
                 <div class="form-group">
                     <label for="telefono">Telefono</label>
-                    <div style="display: flex; align-items: center; gap: 0.5rem;">
-                        <span style="padding: 0.6rem 0.75rem; background: var(--bg-input); border: 1px solid var(--border-color); border-radius: var(--border-radius); color: var(--text-secondary); font-size: 0.9rem; white-space: nowrap;">+502</span>
-                        <input type="tel" id="telefono" name="telefono"
-                               value="{{ proveedor.telefono if proveedor and proveedor.telefono else '' }}"
-                               placeholder="12345678"
-                               pattern="[0-9]{8}"
-                               maxlength="8"
-                               style="flex: 1;">
+                    <div class="inline-field">
+                        <span class="inline-field-prefix">+502</span>
+                        <div class="form-group">
+                            <input type="tel" id="telefono" name="telefono"
+                                   value="{{ proveedor.telefono if proveedor and proveedor.telefono else '' }}"
+                                   placeholder="12345678"
+                                   pattern="[0-9]{8}"
+                                   maxlength="8">
+                        </div>
                     </div>
                     <small style="color: var(--text-muted); font-size: 0.75rem; margin-top: 0.25rem; display: block;">Formato: 8 digitos (ej: 12345678)</small>
                 </div>
@@ -86,9 +87,17 @@
 
             <div class="form-actions">
                 <button type="submit" class="btn btn-primary">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>
+                    </svg>
                     {% if proveedor %}Guardar Cambios{% else %}Crear Proveedor{% endif %}
                 </button>
-                <a href="{% if proveedor %}/proveedores/{{ proveedor.id }}{% else %}/proveedores{% endif %}" class="btn btn-secondary">Cancelar</a>
+                <a href="{% if proveedor %}/proveedores/{{ proveedor.id }}{% else %}/proveedores{% endif %}" class="btn btn-secondary">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                    Cancelar
+                </a>
             </div>
         </form>
     </div>

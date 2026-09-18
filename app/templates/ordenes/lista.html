@@ -98,7 +98,7 @@
             </thead>
             <tbody>
                 {% for orden in ordenes %}
-                <tr>
+                <tr data-href="/ordenes/{{ orden.codigo }}">
                     <td><strong><a href="/ordenes/{{ orden.codigo }}">{{ orden.codigo }}</a></strong></td>
                     <td>{{ orden.cliente_nombre }}</td>
                     <td>{{ orden.moto_info }}</td>
@@ -129,6 +129,7 @@
 </div>
 
 {% if total_pages > 1 %}
+<p class="pagination-summary">Mostrando {{ ((page - 1) * 20 + 1) }}-{{ [page * 20, total] | min }} de {{ total }} ordenes</p>
 <div class="pagination">
     {% if page > 1 %}
     <a href="/ordenes?page={{ page - 1 }}{% if search %}&search={{ search }}{% endif %}{% if estado %}&estado={{ estado }}{% endif %}">Anterior</a>

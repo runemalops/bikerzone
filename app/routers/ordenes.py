@@ -1,3 +1,4 @@
+from typing import List
 from fastapi import APIRouter, Depends, Request, Form, HTTPException, Query
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from sqlalchemy.orm import Session
@@ -13,6 +14,9 @@ from app.schemas.orden_servicio import (
     EstadoUpdate,
     FLUJO_ESTADOS,
     ESTADO_LABELS,
+    SERVICIOS_CATALOGO,
+    codificar_falla_reportada,
+    decodificar_falla_reportada,
 )
 from app.services import orden_service
 from app.services import export_service
@@ -90,6 +94,7 @@ async def nueva_orden_form(
             "tecnicos": tecnicos,
             "client_id": client_id,
             "moto_id": moto_id,
+            "catalogo_servicios": SERVICIOS_CATALOGO,
         },
     )
 
@@ -100,16 +105,19 @@ async def crear_orden(
     client_id: int = Form(...),
     motorcycle_id: int = Form(...),
     technician_id: str = Form(""),
-    falla_reportada: str = Form(...),
+    servicio_tipo: str = Form(""),
+    fallas_seleccionadas: List[str] = Form([]),
+    falla_reportada: str = Form(""),
     kilometraje_entrada: str = Form(""),
     db: Session = Depends(get_db),
     user: Usuario = Depends(get_current_user),
 ):
+    falla_completa = codificar_falla_reportada(servicio_tipo, fallas_seleccionadas, falla_reportada)
     data = OrdenServicioCreate(
         client_id=client_id,
         motorcycle_id=motorcycle_id,
         technician_id=int(technician_id) if technician_id else None,
-        falla_reportada=falla_reportada,
+        falla_reportada=falla_completa,
         kilometraje_entrada=int(kilometraje_entrada) if kilometraje_entrada else None,
     )
     orden = orden_service.create_orden(db, data, user.id)
@@ -131,6 +139,7 @@ async def detalle_orden(
     repuestos = orden_service.get_repuestos_orden(db, orden.id)
     estados_posibles = FLUJO_ESTADOS.get(orden.estado, [])
     repuestos_list = orden_service.getRepuestosList(db)
+    falla_decodificada = decodificar_falla_reportada(orden.falla_reportada)
 
     return templates.TemplateResponse(
         "ordenes/detalle.html",
@@ -143,6 +152,8 @@ async def detalle_orden(
             "estados_posibles": estados_posibles,
             "estados_labels": ESTADO_LABELS,
             "repuestos_list": repuestos_list,
+            "falla_decodificada": falla_decodificada,
+            "catalogo_servicios": SERVICIOS_CATALOGO,
         },
     )
 
@@ -211,6 +222,48 @@ async def agregar_repuesto(
 
     success, message = orden_service.add_repuesto_orden(
         db, orden.id, repuesto_id, cantidad
+    )
+
+    if not success:
+        raise HTTPException(status_code=400, detail=message)
+
+    return RedirectResponse(url=f"/ordenes/{codigo}", status_code=303)
+
+
+@router.post("/{codigo}/eliminar-repuesto/{item_id}")
+async def eliminar_repuesto(
+    request: Request,
+    codigo: str,
+    item_id: int,
+    db: Session = Depends(get_db),
+    user: Usuario = Depends(get_current_user),
+):
+    orden = orden_service.get_orden(db, codigo)
+    if not orden:
+        raise HTTPException(status_code=404, detail="Orden no encontrada")
+
+    success, message = orden_service.remove_repuesto_orden(db, orden.id, item_id)
+
+    if not success:
+        raise HTTPException(status_code=400, detail=message)
+
+    return RedirectResponse(url=f"/ordenes/{codigo}", status_code=303)
+
+
+@router.post("/{codigo}/confirmar")
+async def confirmar_orden(
+    request: Request,
+    codigo: str,
+    observaciones: str = Form(""),
+    db: Session = Depends(get_db),
+    user: Usuario = Depends(get_current_user),
+):
+    orden = orden_service.get_orden(db, codigo)
+    if not orden:
+        raise HTTPException(status_code=404, detail="Orden no encontrada")
+
+    success, message = orden_service.confirmar_orden(
+        db, orden.id, user.id, observaciones or None
     )
 
     if not success:

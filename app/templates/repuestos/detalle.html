@@ -68,16 +68,30 @@
             </header>
             <div class="panel-body">
                 {% if repuesto.descripcion %}
-                <p><strong>Descripcion:</strong></p>
-                <p style="margin-bottom: 1rem; padding: 0.75rem; background: var(--bg-input); border-radius: var(--border-radius);">{{ repuesto.descripcion }}</p>
+                <div class="info-card" style="margin-bottom: 1rem;">
+                    <div class="info-card-content">
+                        <div class="info-card-label">Descripcion</div>
+                        <div class="info-card-value">{{ repuesto.descripcion }}</div>
+                    </div>
+                </div>
                 {% endif %}
 
                 {% if repuesto.compatible_models %}
-                <p><strong>Modelos Compatibles:</strong> {{ repuesto.compatible_models }}</p>
+                <div class="info-card" style="margin-bottom: 1rem;">
+                    <div class="info-card-content">
+                        <div class="info-card-label">Modelos Compatibles</div>
+                        <div class="info-card-value">{{ repuesto.compatible_models }}</div>
+                    </div>
+                </div>
                 {% endif %}
 
                 {% if repuesto.ubicacion %}
-                <p><strong>Ubicacion:</strong> {{ repuesto.ubicacion }}</p>
+                <div class="info-card" style="margin-bottom: 1rem;">
+                    <div class="info-card-content">
+                        <div class="info-card-label">Ubicacion</div>
+                        <div class="info-card-value">{{ repuesto.ubicacion }}</div>
+                    </div>
+                </div>
                 {% endif %}
 
                 <div class="form-row" style="margin-top: 1rem;">
@@ -92,9 +106,11 @@
                 </div>
 
                 {% if repuesto.precio_compra and repuesto.precio_venta %}
+                {% set margen = repuesto.precio_venta - repuesto.precio_compra %}
+                {% set margen_pct = (margen / repuesto.precio_compra * 100) if repuesto.precio_compra > 0 else 0 %}
                 <p style="font-size: 0.85rem; color: var(--text-muted);">
-                    Margen: {{ currency_symbol }}{{ "%.2f"|format(repuesto.precio_venta - repuesto.precio_compra) }}
-                    ({{ "%.1f"|format(((repuesto.precio_venta - repuesto.precio_compra) / repuesto.precio_compra * 100) if repuesto.precio_compra > 0 else 0 }}%)
+                    Margen: {{ currency_symbol }}{{ "%.2f"|format(margen) }}
+                    ({{ "%.1f"|format(margen_pct) }}%)
                 </p>
                 {% endif %}
             </div>
@@ -108,29 +124,63 @@
                 <h2>Actualizar Stock</h2>
             </header>
             <div class="panel-body">
-                <form method="POST" action="/repuestos/{{ repuesto.id }}/stock" style="display: flex; gap: 0.5rem; align-items: flex-end; flex-wrap: wrap;">
-                    <div class="form-group" style="margin-bottom: 0; flex: 1; min-width: 150px;">
-                        <label for="tipo">Tipo</label>
-                        <select id="tipo" name="tipo" required>
-                            <option value="entrada">Entrada (+)</option>
-                            <option value="salida">Salida (-)</option>
-                        </select>
+                <form method="POST" action="/repuestos/{{ repuesto.id }}/stock">
+                    <div class="form-row-compact">
+                        <div class="form-group">
+                            <label for="tipo">Tipo</label>
+                            <select id="tipo" name="tipo" required>
+                                <option value="entrada">Entrada (+)</option>
+                                <option value="salida">Salida (-)</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="max-width: 100px;">
+                            <label for="cantidad">Cantidad</label>
+                            <input type="number" id="cantidad" name="cantidad" min="1" value="1" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                            </svg>
+                            Actualizar
+                        </button>
                     </div>
-                    <div class="form-group" style="margin-bottom: 0; flex: 1; min-width: 100px;">
-                        <label for="cantidad">Cantidad</label>
-                        <input type="number" id="cantidad" name="cantidad" min="1" value="1" required>
-                    </div>
-                    <button type="submit" class="btn btn-primary">Actualizar</button>
                 </form>
 
-                <div style="margin-top: 1rem; padding: 1rem; background: var(--bg-input); border-radius: var(--border-radius);">
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                        <span>Stock Actual:</span>
-                        <strong>{{ repuesto.stock_actual }}</strong>
+                <div style="margin-top: 1.25rem; padding: 1rem; background: var(--bg-input); border: 1px solid var(--border-color); border-radius: var(--border-radius);">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 1rem;">
+                        <div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.25rem;">Stock Actual</div>
+                            <div style="font-size: 2rem; font-weight: 700; line-height: 1; {% if repuesto.stock_actual == 0 %}color: var(--color-danger);{% elif repuesto.stock_actual <= repuesto.stock_minimo %}color: var(--color-warning);{% else %}color: var(--color-success);{% endif %}">
+                                {{ repuesto.stock_actual }}
+                            </div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.25rem;">Minimo</div>
+                            <div style="font-size: 1.25rem; font-weight: 600; color: var(--text-secondary);">{{ repuesto.stock_minimo }}</div>
+                        </div>
                     </div>
-                    <div style="display: flex; justify-content: space-between;">
-                        <span>Stock Minimo:</span>
-                        <strong>{{ repuesto.stock_minimo }}</strong>
+
+                    {% set stock_real_pct = ((repuesto.stock_actual / repuesto.stock_minimo * 100) | round(0) | int) if repuesto.stock_minimo > 0 else 100 %}
+                    {% set bar_pct = [stock_real_pct, 100] | min %}
+                    <div style="height: 8px; background: var(--border-color); border-radius: 999px; overflow: hidden; margin-bottom: 0.5rem;">
+                        <div style="height: 100%; width: {{ bar_pct }}%; border-radius: 999px; transition: width 0.3s ease; {% if repuesto.stock_actual == 0 %}background: var(--color-danger);{% elif repuesto.stock_actual <= repuesto.stock_minimo %}background: var(--color-warning);{% else %}background: var(--color-success);{% endif %}"></div>
+                    </div>
+
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-size: 0.75rem; color: var(--text-muted);">
+                            {% if repuesto.stock_actual == 0 %}
+                                Sin stock - Reabastecer urgentemente
+                            {% elif repuesto.stock_actual <= repuesto.stock_minimo %}
+                                Stock bajo - Considerar reabastecer
+                            {% else %}
+                                Stock suficiente
+                            {% endif %}
+                        </span>
+                        {% if repuesto.stock_minimo > 0 %}
+                        <span style="font-size: 0.75rem; font-weight: 500; color: var(--text-secondary);">
+                            {{ stock_real_pct }}% del minimo
+                        </span>
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -142,13 +192,15 @@
                 <h2>Valorizacion</h2>
             </header>
             <div class="panel-body">
-                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                    <span>Valor en Compra:</span>
-                    <strong>{% if repuesto.precio_compra %}{{ currency_symbol }}{{ "%.2f"|format(repuesto.precio_compra * repuesto.stock_actual) }}{% else %}-{% endif %}</strong>
-                </div>
-                <div style="display: flex; justify-content: space-between;">
-                    <span>Valor en Venta:</span>
-                    <strong style="color: var(--color-success);">{% if repuesto.precio_venta %}{{ currency_symbol }}{{ "%.2f"|format(repuesto.precio_venta * repuesto.stock_actual) }}{% else %}-{% endif %}</strong>
+                <div class="summary-box">
+                    <div class="summary-row">
+                        <span class="summary-row-label">Valor en Compra:</span>
+                        <span class="summary-row-value">{% if repuesto.precio_compra %}{{ currency_symbol }}{{ "%.2f"|format(repuesto.precio_compra * repuesto.stock_actual) }}{% else %}-{% endif %}</span>
+                    </div>
+                    <div class="summary-row">
+                        <span class="summary-row-label">Valor en Venta:</span>
+                        <span class="summary-row-value text-success">{% if repuesto.precio_venta %}{{ currency_symbol }}{{ "%.2f"|format(repuesto.precio_venta * repuesto.stock_actual) }}{% else %}-{% endif %}</span>
+                    </div>
                 </div>
             </div>
         </section>

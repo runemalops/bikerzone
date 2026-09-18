@@ -45,3 +45,6 @@ htmlcov/
 
 # Alembic
 alembic/versions/*.pyc
+
+# Opencode
+.opencode/

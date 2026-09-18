@@ -154,3 +154,66 @@ def get_categorias(db: Session) -> list:
         Repuesto.categoria.isnot(None),
     ).distinct().all()
     return [r[0] for r in result if r[0]]
+
+
+def get_stock_disponible(db: Session, repuesto_id: int) -> int:
+    repuesto = db.query(Repuesto).filter(Repuesto.id == repuesto_id).first()
+    if not repuesto:
+        return 0
+    return repuesto.stock_actual - repuesto.stock_reservado
+
+
+def reservar_stock(
+    db: Session,
+    repuesto_id: int,
+    cantidad: int,
+) -> Tuple[bool, str]:
+    repuesto = db.query(Repuesto).filter(Repuesto.id == repuesto_id).first()
+    if not repuesto:
+        return False, "Repuesto no encontrado"
+
+    disponible = repuesto.stock_actual - repuesto.stock_reservado
+    if disponible < cantidad:
+        return False, f"Stock insuficiente. Disponible: {disponible}"
+
+    repuesto.stock_reservado += cantidad
+    db.commit()
+    return True, f"Stock reservado: {cantidad} unidades"
+
+
+def liberar_reserva(
+    db: Session,
+    repuesto_id: int,
+    cantidad: int,
+) -> Tuple[bool, str]:
+    repuesto = db.query(Repuesto).filter(Repuesto.id == repuesto_id).first()
+    if not repuesto:
+        return False, "Repuesto no encontrado"
+
+    if repuesto.stock_reservado < cantidad:
+        return False, f"Reserva insuficiente. Reservado: {repuesto.stock_reservado}"
+
+    repuesto.stock_reservado -= cantidad
+    db.commit()
+    return True, f"Reserva liberada: {cantidad} unidades"
+
+
+def confirmar_reserva(
+    db: Session,
+    repuesto_id: int,
+    cantidad: int,
+) -> Tuple[bool, str]:
+    repuesto = db.query(Repuesto).filter(Repuesto.id == repuesto_id).first()
+    if not repuesto:
+        return False, "Repuesto no encontrado"
+
+    if repuesto.stock_reservado < cantidad:
+        return False, f"Reserva insuficiente. Reservado: {repuesto.stock_reservado}"
+
+    if repuesto.stock_actual < cantidad:
+        return False, f"Stock insuficiente. Actual: {repuesto.stock_actual}"
+
+    repuesto.stock_actual -= cantidad
+    repuesto.stock_reservado -= cantidad
+    db.commit()
+    return True, f"Stock confirmado: {cantidad} unidades descontadas"

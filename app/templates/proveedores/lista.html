@@ -61,7 +61,7 @@
             </thead>
             <tbody>
                 {% for proveedor in proveedores %}
-                <tr>
+                <tr data-href="/proveedores/{{ proveedor.id }}">
                     <td><strong><a href="/proveedores/{{ proveedor.id }}">{{ proveedor.nombre }}</a></strong></td>
                     <td>{{ proveedor.contacto or '-' }}</td>
                     <td>{% if proveedor.telefono %}+502 {{ proveedor.telefono }}{% else %}-{% endif %}</td>
@@ -90,6 +90,7 @@
 </div>
 
 {% if total_pages > 1 %}
+<p class="pagination-summary">Mostrando {{ ((page - 1) * 20 + 1) }}-{{ [page * 20, total] | min }} de {{ total }} proveedores</p>
 <div class="pagination">
     {% if page > 1 %}
     <a href="/proveedores?page={{ page - 1 }}{% if search %}&search={{ search }}{% endif %}">Anterior</a>

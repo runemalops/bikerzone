@@ -59,7 +59,7 @@
             </thead>
             <tbody>
                 {% for cliente in clientes %}
-                <tr>
+                <tr data-href="/clientes/{{ cliente.id }}">
                     <td><strong>{{ cliente.nombre }}</strong></td>
                     <td>{% if cliente.telefono %}+502 {{ cliente.telefono }}{% else %}-{% endif %}</td>
                     <td>{{ cliente.email or '-' }}</td>
@@ -88,6 +88,7 @@
 </div>
 
 {% if total_pages > 1 %}
+<p class="pagination-summary">Mostrando {{ ((page - 1) * 20 + 1) }}-{{ [page * 20, total] | min }} de {{ total }} clientes</p>
 <div class="pagination">
     {% if page > 1 %}
     <a href="/clientes?page={{ page - 1 }}{% if search %}&search={{ search }}{% endif %}">Anterior</a>

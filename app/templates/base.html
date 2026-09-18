@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/static/css/style.css?v=2.1">
+    <link rel="stylesheet" href="/static/css/style.css?v=3.0">
     <style>
         .main-content { animation: fadeIn 0.3s ease; }
         @keyframes fadeIn {
@@ -76,6 +76,14 @@
                 </svg>
                 <span class="sidebar-link-text">Reportes</span>
             </a>
+            {% if user and user.rol == 'admin' %}
+            <a href="/usuarios" class="sidebar-link {% if '/usuarios' in request.url.path %}active{% endif %}" title="Usuarios">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                </svg>
+                <span class="sidebar-link-text">Usuarios</span>
+            </a>
+            {% endif %}
         </nav>
 
         <div class="sidebar-footer">
@@ -106,7 +114,7 @@
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
                 </svg>
-                <input type="text" id="global-search" placeholder="Buscar clientes, motos, ordenes..." autocomplete="off">
+                <input type="text" id="global-search" placeholder="Buscar clientes, motos, ordenes, repuestos..." autocomplete="off">
                 <kbd class="search-shortcut">Ctrl+K</kbd>
             </div>
 
@@ -152,22 +160,33 @@
 
     <div class="mobile-overlay" id="mobile-overlay"></div>
 
-    <script src="/static/js/main.js?v=2.0"></script>
-    <script>
-    document.querySelectorAll('form').forEach(form => {
-        form.addEventListener('submit', function(e) {
-            const submitBtn = this.querySelector('button[type="submit"]');
-            if (submitBtn && !submitBtn.dataset.loading) {
-                submitBtn.dataset.originalText = submitBtn.innerHTML;
-                submitBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation: spin 1s linear infinite;"><circle cx="12" cy="12" r="10" stroke-dasharray="50" stroke-dashoffset="20"/></svg> Guardando...';
-                submitBtn.disabled = true;
-            }
-        });
-    });
-    const style = document.createElement('style');
-    style.textContent = '@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }';
-    document.head.appendChild(style);
-    </script>
+    <!-- Mobile Search FAB -->
+    <button class="mobile-search-fab" title="Buscar">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+    </button>
+
+    <!-- Mobile Search Modal -->
+    <div class="mobile-search-modal">
+        <div class="mobile-search-modal-content">
+            <div class="mobile-search-input-wrapper">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+                <input type="text" class="mobile-search-input" placeholder="Buscar clientes, motos, ordenes, repuestos..." autocomplete="off">
+                <button class="mobile-search-close-btn" title="Cerrar">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="mobile-search-results"></div>
+        </div>
+    </div>
+
+    <script src="/static/js/main.js?v=3.0"></script>
+    <script src="/static/js/autocomplete.js?v=1.0"></script>
     {% block scripts %}{% endblock %}
 </body>
 </html>
