@@ -60,13 +60,15 @@
     {% if cliente.direccion %}
     <div class="card">
         <div class="card-body">
-            <div style="display: flex; align-items: flex-start; gap: 0.75rem;">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--text-muted); margin-top: 2px;">
-                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
-                </svg>
-                <div>
-                    <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.25rem;">Direccion</div>
-                    <div style="font-weight: 500;">{{ cliente.direccion }}</div>
+            <div class="info-card">
+                <div class="info-card-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+                    </svg>
+                </div>
+                <div class="info-card-content">
+                    <div class="info-card-label">Direccion</div>
+                    <div class="info-card-value">{{ cliente.direccion }}</div>
                 </div>
             </div>
         </div>
@@ -75,13 +77,15 @@
     {% if cliente.notas %}
     <div class="card">
         <div class="card-body">
-            <div style="display: flex; align-items: flex-start; gap: 0.75rem;">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--text-muted); margin-top: 2px;">
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
-                </svg>
-                <div>
-                    <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.25rem;">Notas</div>
-                    <div style="font-weight: 500;">{{ cliente.notas }}</div>
+            <div class="info-card">
+                <div class="info-card-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
+                    </svg>
+                </div>
+                <div class="info-card-content">
+                    <div class="info-card-label">Notas</div>
+                    <div class="info-card-value">{{ cliente.notas }}</div>
                 </div>
             </div>
         </div>

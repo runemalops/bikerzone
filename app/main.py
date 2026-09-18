@@ -18,6 +18,7 @@ from app.routers import ordenes_compra as ordenes_compra_router
 from app.routers import dashboard as dashboard_router
 from app.routers import reportes as reportes_router
 from app.routers import search as search_router
+from app.routers import usuarios as usuarios_router
 
 import os
 
@@ -75,6 +76,7 @@ app.include_router(ordenes_compra_router.router)
 app.include_router(dashboard_router.router)
 app.include_router(reportes_router.router)
 app.include_router(search_router.router)
+app.include_router(usuarios_router.router)
 
 
 @app.get("/", response_class=HTMLResponse)

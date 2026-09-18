@@ -17,6 +17,7 @@ class Repuesto(Base):
     compatible_models = Column(String(200))
     stock_minimo = Column(Integer, default=3)
     stock_actual = Column(Integer, default=0)
+    stock_reservado = Column(Integer, default=0)
     precio_compra = Column(Numeric(10, 2))
     precio_venta = Column(Numeric(10, 2))
     ubicacion = Column(String(50))

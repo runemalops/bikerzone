@@ -171,3 +171,28 @@ async def recibir_mercancia(
         raise HTTPException(status_code=400, detail=message)
 
     return RedirectResponse(url=f"/ordenes-compra/{codigo}", status_code=303)
+
+
+@router.get("/{codigo}/pdf", response_class=HTMLResponse)
+async def imprimir_orden_compra(
+    request: Request,
+    codigo: str,
+    db: Session = Depends(get_db),
+    user: Usuario = Depends(get_current_user),
+):
+    orden = orden_compra_service.get_orden_compra(db, codigo)
+    if not orden:
+        raise HTTPException(status_code=404, detail="Orden no encontrada")
+
+    detalles = orden_compra_service.get_detalles_orden(db, orden.id)
+
+    return templates.TemplateResponse(
+        "ordenes_compra/pdf.html",
+        {
+            "request": request,
+            "user": user,
+            "orden": orden,
+            "detalles": detalles,
+            "estados_labels": ESTADOS_COMPRA,
+        },
+    )

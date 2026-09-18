@@ -88,7 +88,7 @@ def create_orden_compra(
     for det in data.detalles:
         subtotal += det.precio_unitario * det.cantidad
 
-    iva = subtotal * 0.16
+    iva = subtotal * 0.12
     total = subtotal + iva
 
     orden = OrdenCompra(

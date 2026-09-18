@@ -86,14 +86,14 @@
 
             <div class="form-row">
                 <div class="form-group">
-                    <label for="precio_compra">Precio Compra ($)</label>
+                    <label for="precio_compra">Precio Compra ({{ currency_symbol }})</label>
                     <input type="number" id="precio_compra" name="precio_compra" step="0.01" min="0"
                            value="{{ repuesto.precio_compra if repuesto and repuesto.precio_compra else '' }}"
                            placeholder="0.00">
                 </div>
 
                 <div class="form-group">
-                    <label for="precio_venta">Precio Venta ($)</label>
+                    <label for="precio_venta">Precio Venta ({{ currency_symbol }})</label>
                     <input type="number" id="precio_venta" name="precio_venta" step="0.01" min="0"
                            value="{{ repuesto.precio_venta if repuesto and repuesto.precio_venta else '' }}"
                            placeholder="0.00">
@@ -109,9 +109,17 @@
 
             <div class="form-actions">
                 <button type="submit" class="btn btn-primary">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>
+                    </svg>
                     {% if repuesto %}Guardar Cambios{% else %}Crear Repuesto{% endif %}
                 </button>
-                <a href="{% if repuesto %}/repuestos/{{ repuesto.id }}{% else %}/repuestos{% endif %}" class="btn btn-secondary">Cancelar</a>
+                <a href="{% if repuesto %}/repuestos/{{ repuesto.id }}{% else %}/repuestos{% endif %}" class="btn btn-secondary">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                    Cancelar
+                </a>
             </div>
         </form>
     </div>

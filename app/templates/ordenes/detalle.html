@@ -113,13 +113,34 @@
             </header>
             <div class="panel-body">
                 <div style="margin-bottom: 1.5rem;">
-                    <label style="display: block; font-size: 0.85rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.5rem;">Falla Reportada</label>
+                    <span class="section-label">Falla Reportada</span>
+
+                    {% if falla_decodificada.servicio_tipo %}
+                    <div class="service-type-display">
+                        <span class="service-type-tag" style="background: {{ catalogo_servicios[falla_decodificada.servicio_tipo].color }}15; color: {{ catalogo_servicios[falla_decodificada.servicio_tipo].color }}; border-color: {{ catalogo_servicios[falla_decodificada.servicio_tipo].color }}30;">
+                            {{ catalogo_servicios[falla_decodificada.servicio_tipo].label }}
+                        </span>
+                    </div>
+                    {% endif %}
+
+                    {% if falla_decodificada.fallas %}
+                    <div class="failure-tags-display">
+                        {% for falla in falla_decodificada.fallas %}
+                        <span class="failure-tag">{{ falla }}</span>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    {% if falla_decodificada.descripcion %}
+                    <p style="padding: 0.875rem 1rem; background: var(--bg-input); border-radius: var(--border-radius); border-left: 3px solid var(--color-secondary); margin-top: 0.75rem;">{{ falla_decodificada.descripcion }}</p>
+                    {% elif not falla_decodificada.fallas %}
                     <p style="padding: 0.875rem 1rem; background: var(--bg-input); border-radius: var(--border-radius); border-left: 3px solid var(--color-secondary);">{{ orden.falla_reportada }}</p>
+                    {% endif %}
                 </div>
 
                 {% if orden.diagnostico %}
                 <div style="margin-bottom: 1.5rem;">
-                    <label style="display: block; font-size: 0.85rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.5rem;">Diagnostico</label>
+                    <span class="section-label">Diagnostico</span>
                     <p style="padding: 0.875rem 1rem; background: var(--bg-input); border-radius: var(--border-radius); border-left: 3px solid var(--color-info);">{{ orden.diagnostico }}</p>
                 </div>
                 {% endif %}
@@ -172,21 +193,49 @@
                         <thead>
                             <tr>
                                 <th>Repuesto</th>
-                                <th>Cantidad</th>
-                                <th>Precio Unit.</th>
-                                <th>Subtotal</th>
+                                <th style="text-align: center;">Cantidad</th>
+                                <th style="text-align: right;">Precio Unit.</th>
+                                <th style="text-align: right;">Subtotal</th>
+                                {% if orden.estado in ['received', 'in_progress'] %}
+                                <th style="width: 5%;"></th>
+                                {% endif %}
                             </tr>
                         </thead>
                         <tbody>
                             {% for r in repuestos %}
                             <tr>
                                 <td><strong>{{ r.repuesto_nombre }}</strong></td>
-                                <td>{{ r.cantidad }}</td>
-                                <td>{{ currency_symbol }}{{ "%.2f"|format(r.precio_unitario) }}</td>
-                                <td><strong>{{ currency_symbol }}{{ "%.2f"|format(r.subtotal) }}</strong></td>
+                                <td style="text-align: center;">{{ r.cantidad }}</td>
+                                <td style="text-align: right;">{{ currency_symbol }}{{ "%.2f"|format(r.precio_unitario) }}</td>
+                                <td style="text-align: right; font-weight: 600;">{{ currency_symbol }}{{ "%.2f"|format(r.subtotal) }}</td>
+                                {% if orden.estado in ['received', 'in_progress'] %}
+                                <td style="text-align: center;">
+                                    <form method="POST" action="/ordenes/{{ orden.codigo }}/eliminar-repuesto/{{ r.id }}" style="display: inline;">
+                                        <button type="submit" class="btn-remove" title="Eliminar repuesto"
+                                                onclick="return confirm('Eliminar este repuesto y liberar la reserva?')">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                                            </svg>
+                                        </button>
+                                    </form>
+                                </td>
+                                {% endif %}
                             </tr>
                             {% endfor %}
                         </tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="{% if orden.estado in ['received', 'in_progress'] %}3{% else %}3{% endif %}" style="text-align: right; padding-right: 1rem;">
+                                    <strong>Subtotal:</strong>
+                                </td>
+                                <td style="text-align: right; font-weight: 600;">
+                                    <strong>{{ currency_symbol }}{{ "%.2f"|format(orden.presupuesto or 0) }}</strong>
+                                </td>
+                                {% if orden.estado in ['received', 'in_progress'] %}
+                                <td></td>
+                                {% endif %}
+                            </tr>
+                        </tfoot>
                     </table>
                 </div>
                 {% else %}
@@ -194,27 +243,58 @@
                 {% endif %}
 
                 <!-- Agregar repuesto -->
-                <form method="POST" action="/ordenes/{{ orden.codigo }}/agregar-repuesto" style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border-color); display: flex; gap: 0.75rem; align-items: flex-end; flex-wrap: wrap;">
-                    <div class="form-group" style="margin-bottom: 0; flex: 2; min-width: 200px;">
-                        <label for="repuesto_id">Seleccionar Repuesto</label>
-                        <select id="repuesto_id" name="repuesto_id" required>
-                            <option value="">Buscar repuesto...</option>
-                            {% for r in repuestos_list %}
-                            <option value="{{ r.id }}">{{ r.nombre }} - Stock: {{ r.stock_actual }}</option>
-                            {% endfor %}
-                        </select>
+                {% if orden.estado in ['received', 'in_progress'] %}
+                <form method="POST" action="/ordenes/{{ orden.codigo }}/agregar-repuesto" style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border-color);">
+                    <span class="section-label">Agregar Repuesto del Inventario</span>
+                    <div class="form-row-compact">
+                        <div class="form-group" style="flex: 3;">
+                            <label for="repuesto_id">Seleccionar Repuesto</label>
+                            <select id="repuesto_id" name="repuesto_id" required>
+                                <option value="">Buscar repuesto...</option>
+                                {% for r in repuestos_list %}
+                                <option value="{{ r.id }}" data-disponible="{{ r.stock_disponible }}">
+                                    {{ r.nombre }} ({{ r.codigo }}) - Disponible: {{ r.stock_disponible }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group" style="max-width: 100px;">
+                            <label for="cantidad">Cantidad</label>
+                            <input type="number" id="cantidad" name="cantidad" min="1" value="1" required>
+                        </div>
+                        <button type="submit" class="btn btn-success">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                            </svg>
+                            Agregar
+                        </button>
                     </div>
-                    <div class="form-group" style="margin-bottom: 0; flex: 1; min-width: 100px;">
-                        <label for="cantidad">Cantidad</label>
-                        <input type="number" id="cantidad" name="cantidad" min="1" value="1" required>
-                    </div>
-                    <button type="submit" class="btn btn-success">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-                        </svg>
-                        Agregar
-                    </button>
+                    <small style="color: var(--text-muted); font-size: 0.75rem; display: block; margin-top: 0.5rem;">
+                        El stock se reservara hasta que la orden sea confirmada.
+                    </small>
                 </form>
+                {% endif %}
+
+                <!-- Confirmar orden -->
+                {% if orden.estado in ['received', 'in_progress'] and repuestos %}
+                <form method="POST" action="/ordenes/{{ orden.codigo }}/confirmar" style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border-color);">
+                    <div class="form-row">
+                        <div class="form-group" style="flex: 3;">
+                            <label for="observaciones">Observaciones (opcional)</label>
+                            <input type="text" id="observaciones" name="observaciones" placeholder="Notas sobre la confirmacion...">
+                        </div>
+                        <div class="form-group" style="flex: 1; display: flex; align-items: flex-end;">
+                            <button type="submit" class="btn btn-primary" style="width: 100%;"
+                                    onclick="return confirm('Confirmar orden? El stock reservado sera descontado del inventario.')">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="20 6 9 17 4 12"/>
+                                </svg>
+                                {% if orden.estado == 'received' %}Iniciar Trabajo{% else %}Marcar Completado{% endif %}
+                            </button>
+                        </div>
+                    </div>
+                </form>
+                {% endif %}
             </div>
         </section>
     </div>

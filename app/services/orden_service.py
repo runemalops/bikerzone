@@ -16,6 +16,11 @@ from app.schemas.orden_servicio import (
     FLUJO_ESTADOS,
     ESTADO_LABELS,
 )
+from app.services.repuesto_service import (
+    reservar_stock,
+    liberar_reserva,
+    confirmar_reserva,
+)
 
 
 def generate_codigo(db: Session) -> str:
@@ -231,30 +236,103 @@ def add_repuesto_orden(
     if not repuesto:
         return False, "Repuesto no encontrado"
 
-    if repuesto.stock_actual < cantidad:
-        return False, f"Stock insuficiente. Disponible: {repuesto.stock_actual}"
+    disponible = repuesto.stock_actual - repuesto.stock_reservado
+    if disponible < cantidad:
+        return False, f"Stock insuficiente. Disponible: {disponible}"
 
-    subtotal = float(repuesto.precio_venta) * cantidad
+    success, message = reservar_stock(db, repuesto_id, cantidad)
+    if not success:
+        return False, message
+
+    precio = repuesto.precio_venta or repuesto.precio_compra or 0
+    subtotal = float(precio) * cantidad
 
     item = OrdenRepuesto(
         service_order_id=orden_id,
         part_id=repuesto_id,
         cantidad=cantidad,
-        precio_unitario=repuesto.precio_venta,
+        precio_unitario=precio,
         subtotal=subtotal,
     )
     db.add(item)
-
-    repuesto.stock_actual -= cantidad
     db.commit()
 
-    return True, f"Repuesto {repuesto.nombre} agregado"
+    return True, f"Repuesto {repuesto.nombre} agregado (stock reservado)"
+
+
+def remove_repuesto_orden(
+    db: Session,
+    orden_id: int,
+    item_id: int,
+) -> Tuple[bool, str]:
+    item = db.query(OrdenRepuesto).filter(
+        OrdenRepuesto.id == item_id,
+        OrdenRepuesto.service_order_id == orden_id,
+    ).first()
+    if not item:
+        return False, "Item no encontrado"
+
+    success, message = liberar_reserva(db, item.part_id, item.cantidad)
+    if not success:
+        return False, message
+
+    db.delete(item)
+    db.commit()
+
+    return True, "Repuesto eliminado y reserva liberada"
+
+
+def confirmar_orden(
+    db: Session,
+    orden_id: int,
+    user_id: int,
+    observaciones: Optional[str] = None,
+) -> Tuple[bool, str]:
+    orden = db.query(OrdenServicio).filter(OrdenServicio.id == orden_id).first()
+    if not orden:
+        return False, "Orden no encontrada"
+
+    items = db.query(OrdenRepuesto).filter(
+        OrdenRepuesto.service_order_id == orden_id
+    ).all()
+
+    for item in items:
+        success, message = confirmar_reserva(db, item.part_id, item.cantidad)
+        if not success:
+            return False, f"Error al confirmar stock: {message}"
+
+    if orden.estado == "received":
+        nuevo_estado = "in_progress"
+    elif orden.estado == "in_progress":
+        nuevo_estado = "completed"
+    else:
+        return False, f"Estado no valido para confirmar: {orden.estado}"
+
+    return cambiar_estado(db, orden_id, nuevo_estado, user_id, observaciones)
+
+
+def liberar_reservas_orden(
+    db: Session,
+    orden_id: int,
+) -> Tuple[bool, str]:
+    items = db.query(OrdenRepuesto).filter(
+        OrdenRepuesto.service_order_id == orden_id
+    ).all()
+
+    for item in items:
+        success, message = liberar_reserva(db, item.part_id, item.cantidad)
+        if not success:
+            return False, f"Error al liberar reserva: {message}"
+
+    return True, "Reservas liberadas"
 
 
 def delete_orden(db: Session, orden_id: int) -> bool:
     orden = db.query(OrdenServicio).filter(OrdenServicio.id == orden_id).first()
     if not orden:
         return False
+
+    liberar_reservas_orden(db, orden_id)
 
     db.query(HistorialEstado).filter(HistorialEstado.service_order_id == orden_id).delete()
     db.query(OrdenRepuesto).filter(OrdenRepuesto.service_order_id == orden_id).delete()
@@ -279,4 +357,21 @@ def getTecnicosList(db: Session) -> list:
 
 
 def getRepuestosList(db: Session) -> list:
-    return db.query(Repuesto).filter(Repuesto.activo == True, Repuesto.stock_actual > 0).order_by(Repuesto.nombre).all()
+    repuestos = db.query(Repuesto).filter(
+        Repuesto.activo == True
+    ).order_by(Repuesto.nombre).all()
+
+    result = []
+    for r in repuestos:
+        disponible = r.stock_actual - r.stock_reservado
+        result.append({
+            "id": r.id,
+            "nombre": r.nombre,
+            "codigo": r.codigo,
+            "precio_compra": r.precio_compra,
+            "precio_venta": r.precio_venta,
+            "stock_actual": r.stock_actual,
+            "stock_reservado": r.stock_reservado,
+            "stock_disponible": disponible,
+        })
+    return result

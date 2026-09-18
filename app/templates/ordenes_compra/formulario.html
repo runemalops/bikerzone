@@ -19,9 +19,9 @@
     </div>
 </header>
 
-<div class="card">
-    <div class="card-body">
-        <form method="POST" action="/ordenes-compra/nueva" id="ordenForm">
+<form method="POST" action="/ordenes-compra/nueva" id="ordenForm">
+    <div class="card" style="margin-bottom: 1.5rem;">
+        <div class="card-body">
             <div class="form-row">
                 <div class="form-group">
                     <label for="supplier_id">Proveedor *</label>
@@ -32,128 +32,277 @@
                         {% endfor %}
                     </select>
                 </div>
-
-                <div class="form-group">
+                <div class="form-group" style="flex: 2;">
                     <label for="notas">Notas</label>
                     <input type="text" id="notas" name="notas"
                            placeholder="Observaciones de la orden...">
                 </div>
             </div>
+        </div>
+    </div>
 
-            <h3 style="margin: 1.5rem 0 1rem;">Repuestos</h3>
+    <div class="card" style="margin-bottom: 1.5rem;">
+        <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+            <h2 style="font-size: 1rem; font-weight: 600; margin: 0;">Repuestos</h2>
+            <button type="button" id="add-detalle" class="btn btn-sm btn-secondary">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+                Agregar
+            </button>
+        </div>
+        <div class="table-wrapper">
+            <table id="detalles-table">
+                <thead>
+                    <tr>
+                        <th style="width: 40%; padding: 0.75rem 1rem;">Repuesto</th>
+                        <th style="width: 15%; padding: 0.75rem 1rem; text-align: center;">Cantidad</th>
+                        <th style="width: 20%; padding: 0.75rem 1rem; text-align: right;">Precio Unit.</th>
+                        <th style="width: 20%; padding: 0.75rem 1rem; text-align: right;">Subtotal</th>
+                        <th style="width: 5%; padding: 0.75rem 0.5rem;"></th>
+                    </tr>
+                </thead>
+                <tbody id="detalles-body">
+                    <tr class="detalle-row">
+                        <td style="padding: 0.5rem 1rem;">
+                            <div class="bz-ac-parent" style="position: relative;">
+                                <input type="text" class="repuesto-search" placeholder="Buscar por nombre o codigo..."
+                                       autocomplete="off">
+                                <input type="hidden" name="repuestos_ids" class="repuesto-id-input">
+                                <input type="hidden" class="repuesto-codigo-input">
+                                <div class="bz-autocomplete-list" style="display: none;"></div>
+                            </div>
+                        </td>
+                        <td style="padding: 0.5rem 1rem; text-align: center;">
+                            <input type="number" name="cantidades" class="cantidad-input"
+                                   min="1" value="1" required style="width: 70px; text-align: center;">
+                        </td>
+                        <td style="padding: 0.5rem 1rem; text-align: right;">
+                            <div class="price-input-wrapper">
+                                <span class="currency-symbol">{{ currency_symbol }}</span>
+                                <input type="number" name="precios" class="precio-input"
+                                       step="0.01" min="0" required style="width: 110px; text-align: right;">
+                            </div>
+                        </td>
+                        <td style="padding: 0.5rem 1rem; text-align: right; font-weight: 600;">
+                            <span class="subtotal-display">{{ currency_symbol }}0.00</span>
+                        </td>
+                        <td style="padding: 0.5rem 0.5rem; text-align: center;">
+                            <button type="button" class="btn-remove" title="Eliminar">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                                </svg>
+                            </button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
 
-            <div id="detalles-container">
-                <div class="detalle-row" style="display: flex; gap: 0.5rem; margin-bottom: 0.75rem; align-items: flex-end;">
-                    <div class="form-group" style="flex: 3; margin-bottom: 0;">
-                        <label>Repuesto</label>
-                        <select name="repuestos_ids" required class="repuesto-select">
-                            <option value="">Seleccionar...</option>
-                            {% for r in repuestos %}
-                            <option value="{{ r.id }}" data-precio="{{ r.precio_compra or 0 }}">{{ r.nombre }} ({{ r.codigo }})</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="form-group" style="flex: 1; margin-bottom: 0;">
-                        <label>Cantidad</label>
-                        <input type="number" name="cantidades" min="1" value="1" required class="cantidad-input">
-                    </div>
-                    <div class="form-group" style="flex: 1; margin-bottom: 0;">
-                        <label>Precio Unit.</label>
-                        <input type="number" name="precios" step="0.01" min="0" required class="precio-input">
-                    </div>
-                    <button type="button" class="btn btn-danger btn-sm remove-detalle" style="margin-bottom: 2px;">X</button>
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 2rem;">
+        <div style="flex: 1;"></div>
+        <div style="width: 300px;">
+            <div class="summary-box">
+                <div class="summary-row">
+                    <span class="summary-row-label" style="font-weight: 600;">Subtotal:</span>
+                    <span class="summary-row-value" style="font-weight: 600;">{{ currency_symbol }}<span id="subtotal">0.00</span></span>
+                </div>
+                <div class="summary-row">
+                    <span class="summary-row-label" style="font-weight: 600;">IVA (12%):</span>
+                    <span class="summary-row-value" style="font-weight: 600;">{{ currency_symbol }}<span id="iva">0.00</span></span>
+                </div>
+                <div class="summary-row" style="padding-top: 0.75rem; margin-top: 0.25rem; border-top: 2px solid var(--border-color);">
+                    <span class="summary-row-label" style="font-weight: 600;">Total:</span>
+                    <span class="summary-row-value text-lg" style="color: var(--color-success); font-weight: 700;">{{ currency_symbol }}<span id="total">0.00</span></span>
                 </div>
             </div>
-
-            <button type="button" id="add-detalle" class="btn btn-secondary" style="margin-bottom: 1.5rem;">
-                + Agregar Repuesto
-            </button>
-
-            <div style="text-align: right; margin-bottom: 1rem;">
-                <strong>Subtotal: $<span id="subtotal">0.00</span></strong><br>
-                <strong>IVA (16%): $<span id="iva">0.00</span></strong><br>
-                <strong style="font-size: 1.2rem;">Total: $<span id="total">0.00</span></strong>
-            </div>
-
-            <div class="form-actions">
-                <button type="submit" class="btn btn-primary">Crear Orden de Compra</button>
-                <a href="/ordenes-compra" class="btn btn-secondary">Cancelar</a>
-            </div>
-        </form>
+        </div>
     </div>
-</div>
 
+    <div class="detail-actions" style="margin-top: 1.5rem;">
+        <a href="/ordenes-compra" class="btn btn-secondary">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+            Cancelar
+        </a>
+        <button type="submit" class="btn btn-primary">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>
+            </svg>
+            Crear Orden de Compra
+        </button>
+    </div>
+</form>
 {% endblock %}
 
 {% block scripts %}
 <script>
+var repuestoItems = [];
+{% for r in repuestos %}
+repuestoItems.push({
+    value: '{{ r.id }}',
+    label: '{{ r.nombre | replace("'", "\\'") }}',
+    codigo: '{{ r.codigo }}',
+    precio: {{ r.precio_compra or 0 }}
+});
+{% endfor %}
+
+function crearFilaRepuesto() {
+    var tbody = document.getElementById('detalles-body');
+    var newRow = document.createElement('tr');
+    newRow.className = 'detalle-row';
+    newRow.innerHTML = `
+        <td style="padding: 0.5rem 1rem;">
+            <div class="bz-ac-parent" style="position: relative;">
+                <input type="text" class="repuesto-search" placeholder="Buscar por nombre o codigo..."
+                       autocomplete="off">
+                <input type="hidden" name="repuestos_ids" class="repuesto-id-input">
+                <input type="hidden" class="repuesto-codigo-input">
+                <div class="bz-autocomplete-list" style="display: none;"></div>
+            </div>
+        </td>
+        <td style="padding: 0.5rem 1rem; text-align: center;">
+            <input type="number" name="cantidades" class="cantidad-input"
+                   min="1" value="1" required style="width: 70px; text-align: center;">
+        </td>
+        <td style="padding: 0.5rem 1rem; text-align: right;">
+            <div class="price-input-wrapper">
+                <span class="currency-symbol">{{ currency_symbol }}</span>
+                <input type="number" name="precios" class="precio-input"
+                       step="0.01" min="0" required style="width: 110px; text-align: right;">
+            </div>
+        </td>
+        <td style="padding: 0.5rem 1rem; text-align: right; font-weight: 600;">
+            <span class="subtotal-display">{{ currency_symbol }}0.00</span>
+        </td>
+        <td style="padding: 0.5rem 0.5rem; text-align: center;">
+            <button type="button" class="btn-remove" title="Eliminar">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                </svg>
+            </button>
+        </td>
+    `;
+    tbody.appendChild(newRow);
+    initRepuestoSearch(newRow);
+    initRowEvents(newRow);
+}
+
+function initRepuestoSearch(row) {
+    var searchInput = row.querySelector('.repuesto-search');
+    var idInput = row.querySelector('.repuesto-id-input');
+    var codigoInput = row.querySelector('.repuesto-codigo-input');
+    var listContainer = row.querySelector('.bz-autocomplete-list');
+    var precioInput = row.querySelector('.precio-input');
+
+    searchInput.addEventListener('input', function() {
+        var query = this.value.toLowerCase().trim();
+        listContainer.innerHTML = '';
+
+        if (query.length < 1) {
+            listContainer.style.display = 'none';
+            return;
+        }
+
+        var matches = repuestoItems.filter(function(item) {
+            return item.label.toLowerCase().includes(query) ||
+                   item.codigo.toLowerCase().includes(query);
+        }).slice(0, 8);
+
+        if (matches.length === 0) {
+            listContainer.style.display = 'none';
+            return;
+        }
+
+        matches.forEach(function(item) {
+            var div = document.createElement('div');
+            div.className = 'bz-autocomplete-item';
+            div.innerHTML = '<span style="font-weight: 500;">' + item.label + '</span>' +
+                           '<span style="color: var(--text-muted); font-size: 0.8rem; margin-left: 8px;">' + item.codigo + '</span>';
+            div.addEventListener('click', function() {
+                searchInput.value = item.label;
+                idInput.value = item.value;
+                codigoInput.value = item.codigo;
+                precioInput.value = item.precio || 0;
+                listContainer.style.display = 'none';
+                calcularTotales();
+            });
+            listContainer.appendChild(div);
+        });
+
+        listContainer.style.display = 'block';
+    });
+
+    searchInput.addEventListener('focus', function() {
+        if (this.value.length >= 1) {
+            this.dispatchEvent(new Event('input'));
+        }
+    });
+
+    document.addEventListener('click', function(e) {
+        if (!row.contains(e.target)) {
+            listContainer.style.display = 'none';
+        }
+    });
+
+    searchInput.addEventListener('blur', function() {
+        setTimeout(function() {
+            listContainer.style.display = 'none';
+        }, 200);
+    });
+}
+
+function initRowEvents(row) {
+    row.querySelector('.btn-remove').addEventListener('click', function() {
+        var tbody = document.getElementById('detalles-body');
+        if (tbody.querySelectorAll('.detalle-row').length > 1) {
+            row.remove();
+            calcularTotales();
+        }
+    });
+
+    row.querySelector('.cantidad-input').addEventListener('input', function() {
+        var precio = parseFloat(row.querySelector('.precio-input').value) || 0;
+        var cantidad = parseFloat(this.value) || 0;
+        row.querySelector('.subtotal-display').textContent = (cantidad * precio).toFixed(2);
+        calcularTotales();
+    });
+
+    row.querySelector('.precio-input').addEventListener('input', function() {
+        var precio = parseFloat(this.value) || 0;
+        var cantidad = parseFloat(row.querySelector('.cantidad-input').value) || 0;
+        row.querySelector('.subtotal-display').textContent = (cantidad * precio).toFixed(2);
+        calcularTotales();
+    });
+}
+
 function calcularTotales() {
-    let subtotal = 0;
-    document.querySelectorAll('.detalle-row').forEach(row => {
-        const cantidad = parseFloat(row.querySelector('.cantidad-input').value) || 0;
-        const precio = parseFloat(row.querySelector('.precio-input').value) || 0;
+    var subtotal = 0;
+    document.querySelectorAll('.detalle-row').forEach(function(row) {
+        var cantidad = parseFloat(row.querySelector('.cantidad-input').value) || 0;
+        var precio = parseFloat(row.querySelector('.precio-input').value) || 0;
         subtotal += cantidad * precio;
     });
 
-    const iva = subtotal * 0.16;
-    const total = subtotal + iva;
+    var iva = subtotal * 0.12;
+    var total = subtotal + iva;
 
     document.getElementById('subtotal').textContent = subtotal.toFixed(2);
     document.getElementById('iva').textContent = iva.toFixed(2);
     document.getElementById('total').textContent = total.toFixed(2);
 }
 
-function agregarDetalle() {
-    const container = document.getElementById('detalles-container');
-    const template = container.querySelector('.detalle-row').cloneNode(true);
-
-    template.querySelectorAll('select, input').forEach(el => {
-        if (el.type === 'number') {
-            el.value = el.name === 'cantidades' ? '1' : '0';
-        } else {
-            el.value = '';
-        }
-    });
-
-    container.appendChild(template);
-    template.querySelector('.remove-detalle').addEventListener('click', function() {
-        if (container.querySelectorAll('.detalle-row').length > 1) {
-            this.closest('.detalle-row').remove();
-            calcularTotales();
-        }
-    });
-
-    template.querySelector('.repuesto-select').addEventListener('change', function() {
-        const option = this.options[this.selectedIndex];
-        const precio = option.dataset.precio || 0;
-        this.closest('.detalle-row').querySelector('.precio-input').value = precio;
-        calcularTotales();
-    });
-
-    template.querySelector('.cantidad-input').addEventListener('input', calcularTotales);
-    template.querySelector('.precio-input').addEventListener('input', calcularTotales);
-}
-
 document.addEventListener('DOMContentLoaded', function() {
-    document.getElementById('add-detalle').addEventListener('click', agregarDetalle);
-
-    document.querySelector('.remove-detalle').addEventListener('click', function() {
-        if (document.querySelectorAll('.detalle-row').length > 1) {
-            this.closest('.detalle-row').remove();
-            calcularTotales();
-        }
+    BZAutocomplete.init('#supplier_id', {
+        placeholder: 'Buscar proveedor por nombre...'
     });
 
-    document.querySelector('.repuesto-select').addEventListener('change', function() {
-        const option = this.options[this.selectedIndex];
-        const precio = option.dataset.precio || 0;
-        this.closest('.detalle-row').querySelector('.precio-input').value = precio;
-        calcularTotales();
-    });
+    initRepuestoSearch(document.querySelector('.detalle-row'));
+    initRowEvents(document.querySelector('.detalle-row'));
 
-    document.querySelectorAll('.cantidad-input, .precio-input').forEach(el => {
-        el.addEventListener('input', calcularTotales);
-    });
+    document.getElementById('add-detalle').addEventListener('click', crearFilaRepuesto);
 
     calcularTotales();
 });

@@ -105,6 +105,7 @@ def seed():
             rep = Repuesto(
                 codigo=r[0], nombre=r[1], descripcion=r[2], categoria=r[3],
                 marca=r[4], stock_minimo=r[5], stock_actual=r[6],
+                stock_reservado=0,
                 precio_compra=r[7], precio_venta=r[8]
             )
             repuestos.append(rep)
@@ -260,8 +261,8 @@ def seed():
                 db.add(detalle)
 
             oc.subtotal = subtotal_total
-            oc.iva = subtotal_total * 0.16
-            oc.total = subtotal_total * 1.16
+            oc.iva = subtotal_total * 0.12
+            oc.total = subtotal_total * 1.12
         db.flush()
 
         db.commit()
