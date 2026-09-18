@@ -101,8 +101,25 @@ async def crear_orden_compra(
         notas=notas or None,
         detalles=detalles,
     )
-    orden = orden_compra_service.create_orden_compra(db, data, user.id)
-    return RedirectResponse(url=f"/ordenes-compra/{orden.codigo}", status_code=303)
+    try:
+        orden = orden_compra_service.create_orden_compra(db, data, user.id)
+        return RedirectResponse(url=f"/ordenes-compra/{orden.codigo}", status_code=303)
+    except ValueError as e:
+        # Show form again with error
+        proveedores = orden_compra_service.getProveedoresList(db)
+        repuestos = orden_compra_service.getRepuestosList(db)
+        return templates.TemplateResponse(
+            "ordenes_compra/formulario.html",
+            {
+                "request": request,
+                "user": user,
+                "orden": None,
+                "proveedores": proveedores,
+                "repuestos": repuestos,
+                "proveedor_id": supplier_id,
+                "error": str(e),
+            },
+        )
 
 
 @router.get("/{codigo}", response_class=HTMLResponse)

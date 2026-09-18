@@ -82,6 +82,9 @@ def create_orden_compra(
     data: OrdenCompraCreate,
     user_id: int,
 ) -> OrdenCompra:
+    if not data.detalles:
+        raise ValueError("La orden debe incluir al menos un repuesto")
+
     codigo = generate_codigo(db)
 
     subtotal = 0

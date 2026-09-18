@@ -15,6 +15,7 @@
         initKPIAnimation();
         initClickableRows();
         initLiveFiltering();
+        initTextareaAutoResize();
     });
 
     // --- Theme Toggle ---
@@ -509,6 +510,27 @@
                 }, 500);
             });
         });
+    }
+
+    // --- Textarea Auto-Resize ---
+    function initTextareaAutoResize() {
+        document.querySelectorAll('textarea').forEach(function (textarea) {
+            // Set initial height based on content
+            autoResize(textarea);
+
+            // Resize on input
+            textarea.addEventListener('input', function () {
+                autoResize(this);
+            });
+        });
+
+        function autoResize(el) {
+            // Reset height to auto to get the correct scrollHeight
+            el.style.height = 'auto';
+            // Set height to scrollHeight, capped by max-height from CSS
+            var newHeight = Math.min(el.scrollHeight, parseInt(getComputedStyle(el).maxHeight) || 300);
+            el.style.height = newHeight + 'px';
+        }
     }
 
     // --- Utility ---

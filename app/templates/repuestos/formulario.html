@@ -40,8 +40,9 @@
 
             <div class="form-group">
                 <label for="descripcion">Descripcion</label>
-                <textarea id="descripcion" name="descripcion"
-                          placeholder="Descripcion detallada del repuesto...">{{ repuesto.descripcion if repuesto and repuesto.descripcion else '' }}</textarea>
+                <textarea id="descripcion" name="descripcion" rows="2"
+                          placeholder="Descripcion detallada del repuesto..."
+                          class="textarea-sm">{{ repuesto.descripcion if repuesto and repuesto.descripcion else '' }}</textarea>
             </div>
 
             <div class="form-row">

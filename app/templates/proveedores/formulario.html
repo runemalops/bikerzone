@@ -79,9 +79,9 @@
 
                 <div class="form-group">
                     <label for="notas">Notas</label>
-                    <input type="text" id="notas" name="notas"
-                           value="{{ proveedor.notas if proveedor and proveedor.notas else '' }}"
-                           placeholder="Informacion adicional...">
+                    <textarea id="notas" name="notas" rows="2"
+                              placeholder="Informacion adicional..."
+                              class="textarea-compact">{{ proveedor.notas if proveedor and proveedor.notas else '' }}</textarea>
                 </div>
             </div>
 
