@@ -73,8 +73,9 @@
 
             <div class="form-group">
                 <label for="notas">Notas</label>
-                <textarea id="notas" name="notas"
-                          placeholder="Informacion adicional sobre el cliente...">{{ cliente.notas if cliente and cliente.notas else '' }}</textarea>
+                <textarea id="notas" name="notas" rows="2"
+                          placeholder="Informacion adicional sobre el cliente..."
+                          class="textarea-sm">{{ cliente.notas if cliente and cliente.notas else '' }}</textarea>
             </div>
 
             <div class="form-actions">

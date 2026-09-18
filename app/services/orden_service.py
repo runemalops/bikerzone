@@ -16,11 +16,6 @@ from app.schemas.orden_servicio import (
     FLUJO_ESTADOS,
     ESTADO_LABELS,
 )
-from app.services.repuesto_service import (
-    reservar_stock,
-    liberar_reserva,
-    confirmar_reserva,
-)
 
 
 def generate_codigo(db: Session) -> str:
@@ -214,6 +209,7 @@ def get_repuestos_orden(db: Session, orden_id: int) -> list:
         result.append({
             "id": item.id,
             "repuesto_nombre": repuesto.nombre if repuesto else "N/A",
+            "repuesto_codigo": repuesto.codigo if repuesto else "N/A",
             "cantidad": item.cantidad,
             "precio_unitario": float(item.precio_unitario) if item.precio_unitario else 0,
             "subtotal": float(item.subtotal) if item.subtotal else 0,
@@ -240,9 +236,7 @@ def add_repuesto_orden(
     if disponible < cantidad:
         return False, f"Stock insuficiente. Disponible: {disponible}"
 
-    success, message = reservar_stock(db, repuesto_id, cantidad)
-    if not success:
-        return False, message
+    repuesto.stock_reservado += cantidad
 
     precio = repuesto.precio_venta or repuesto.precio_compra or 0
     subtotal = float(precio) * cantidad
@@ -272,14 +266,17 @@ def remove_repuesto_orden(
     if not item:
         return False, "Item no encontrado"
 
-    success, message = liberar_reserva(db, item.part_id, item.cantidad)
-    if not success:
-        return False, message
+    repuesto = db.query(Repuesto).filter(Repuesto.id == item.part_id).first()
+    if repuesto:
+        if repuesto.stock_reservado >= item.cantidad:
+            repuesto.stock_reservado -= item.cantidad
+        else:
+            repuesto.stock_reservado = 0
 
     db.delete(item)
     db.commit()
 
-    return True, "Repuesto eliminado y reserva liberada"
+    return True, "Repuesto eliminado"
 
 
 def confirmar_orden(
@@ -297,14 +294,19 @@ def confirmar_orden(
     ).all()
 
     for item in items:
-        success, message = confirmar_reserva(db, item.part_id, item.cantidad)
-        if not success:
-            return False, f"Error al confirmar stock: {message}"
+        repuesto = db.query(Repuesto).filter(Repuesto.id == item.part_id).first()
+        if repuesto:
+            if repuesto.stock_reservado >= item.cantidad:
+                repuesto.stock_reservado -= item.cantidad
+                repuesto.stock_actual -= item.cantidad
+            else:
+                repuesto.stock_actual -= item.cantidad
+                repuesto.stock_reservado = 0
 
     if orden.estado == "received":
         nuevo_estado = "in_progress"
     elif orden.estado == "in_progress":
-        nuevo_estado = "completed"
+        nuevo_estado = "repairing"
     else:
         return False, f"Estado no valido para confirmar: {orden.estado}"
 
@@ -320,9 +322,12 @@ def liberar_reservas_orden(
     ).all()
 
     for item in items:
-        success, message = liberar_reserva(db, item.part_id, item.cantidad)
-        if not success:
-            return False, f"Error al liberar reserva: {message}"
+        repuesto = db.query(Repuesto).filter(Repuesto.id == item.part_id).first()
+        if repuesto:
+            if repuesto.stock_reservado >= item.cantidad:
+                repuesto.stock_reservado -= item.cantidad
+            else:
+                repuesto.stock_reservado = 0
 
     return True, "Reservas liberadas"
 

@@ -89,7 +89,7 @@ ESTADOS_VALIDOS = [
 ]
 
 FLUJO_ESTADOS = {
-    "received": ["diagnosed", "cancelled"],
+    "received": ["diagnosed", "in_progress", "cancelled"],
     "diagnosed": ["quote_sent", "cancelled"],
     "quote_sent": ["quote_approved", "quote_rejected"],
     "quote_approved": ["in_progress"],

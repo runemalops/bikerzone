@@ -7,7 +7,7 @@
     <span class="separator">/</span>
     <a href="/ordenes">Ordenes</a>
     <span class="separator">/</span>
-    <span class="current">Detalle</span>
+    <span class="current">{{ orden.codigo }}</span>
 </nav>
 {% endblock %}
 
@@ -51,10 +51,10 @@
     </div>
 </header>
 
-<div class="dashboard-row">
-    <div>
+<div class="order-detail-layout">
+    <div class="order-main">
         <!-- Flujo de estados -->
-        <section class="panel" style="margin-bottom: 1.5rem;">
+        <section class="panel order-status-panel">
             <header class="panel-header">
                 <h2>Flujo de Estados</h2>
             </header>
@@ -92,7 +92,9 @@
                         </div>
                         <div class="form-group" style="margin-bottom: 0; flex: 3; min-width: 250px;">
                             <label for="observaciones">Observaciones:</label>
-                            <input type="text" id="observaciones" name="observaciones" placeholder="Agregar notas sobre el cambio de estado...">
+                            <textarea id="observaciones" name="observaciones" rows="2"
+                                      placeholder="Agregar notas sobre el cambio de estado..."
+                                      class="textarea-compact"></textarea>
                         </div>
                         <button type="submit" class="btn btn-primary">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -106,13 +108,13 @@
             </div>
         </section>
 
-        <!-- Informacion de la orden -->
-        <section class="panel" style="margin-bottom: 1.5rem;">
+        <!-- Detalle de la orden -->
+        <section class="panel">
             <header class="panel-header">
-                <h2>Detalle</h2>
+                <h2>Detalle de la Orden</h2>
             </header>
             <div class="panel-body">
-                <div style="margin-bottom: 1.5rem;">
+                <div class="falla-section">
                     <span class="section-label">Falla Reportada</span>
 
                     {% if falla_decodificada.servicio_tipo %}
@@ -132,24 +134,31 @@
                     {% endif %}
 
                     {% if falla_decodificada.descripcion %}
-                    <p style="padding: 0.875rem 1rem; background: var(--bg-input); border-radius: var(--border-radius); border-left: 3px solid var(--color-secondary); margin-top: 0.75rem;">{{ falla_decodificada.descripcion }}</p>
+                    <div class="falla-descripcion">
+                        <p>{{ falla_decodificada.descripcion }}</p>
+                    </div>
                     {% elif not falla_decodificada.fallas %}
-                    <p style="padding: 0.875rem 1rem; background: var(--bg-input); border-radius: var(--border-radius); border-left: 3px solid var(--color-secondary);">{{ orden.falla_reportada }}</p>
+                    <div class="falla-descripcion">
+                        <p>{{ orden.falla_reportada }}</p>
+                    </div>
                     {% endif %}
                 </div>
 
                 {% if orden.diagnostico %}
-                <div style="margin-bottom: 1.5rem;">
-                    <span class="section-label">Diagnostico</span>
-                    <p style="padding: 0.875rem 1rem; background: var(--bg-input); border-radius: var(--border-radius); border-left: 3px solid var(--color-info);">{{ orden.diagnostico }}</p>
+                <div class="diagnostico-section">
+                    <span class="section-label">Diagnostico del Tecnico</span>
+                    <div class="diagnostico-content">
+                        <p>{{ orden.diagnostico }}</p>
+                    </div>
                 </div>
                 {% endif %}
 
-                <form method="POST" action="/ordenes/{{ orden.codigo }}/editar">
+                <form method="POST" action="/ordenes/{{ orden.codigo }}/editar" class="edit-form">
                     <div class="form-row">
                         <div class="form-group">
                             <label for="diagnostico">Diagnostico del Tecnico</label>
-                            <textarea id="diagnostico" name="diagnostico" placeholder="Describe el diagnostico tecnico...">{{ orden.diagnostico or '' }}</textarea>
+                            <textarea id="diagnostico" name="diagnostico" rows="3"
+                                      placeholder="Describe el diagnostico tecnico...">{{ orden.diagnostico or '' }}</textarea>
                         </div>
                         <div class="form-group">
                             <label for="presupuesto">Presupuesto ({{ currency_symbol }})</label>
@@ -169,7 +178,7 @@
                                    value="{{ orden.kilometraje_salida if orden.kilometraje_salida else '' }}" placeholder="Km al entregar">
                         </div>
                     </div>
-                    <div class="form-actions" style="margin-top: 0; padding-top: 1rem; border-top: none;">
+                    <div class="form-actions">
                         <button type="submit" class="btn btn-primary">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>
@@ -189,15 +198,16 @@
             <div class="panel-body">
                 {% if repuestos %}
                 <div class="table-wrapper">
-                    <table>
+                    <table class="parts-table">
                         <thead>
                             <tr>
                                 <th>Repuesto</th>
+                                <th>Codigo</th>
                                 <th style="text-align: center;">Cantidad</th>
                                 <th style="text-align: right;">Precio Unit.</th>
                                 <th style="text-align: right;">Subtotal</th>
                                 {% if orden.estado in ['received', 'in_progress'] %}
-                                <th style="width: 5%;"></th>
+                                <th style="width: 50px;"></th>
                                 {% endif %}
                             </tr>
                         </thead>
@@ -205,13 +215,14 @@
                             {% for r in repuestos %}
                             <tr>
                                 <td><strong>{{ r.repuesto_nombre }}</strong></td>
+                                <td><span class="codigo-badge">{{ r.repuesto_codigo }}</span></td>
                                 <td style="text-align: center;">{{ r.cantidad }}</td>
                                 <td style="text-align: right;">{{ currency_symbol }}{{ "%.2f"|format(r.precio_unitario) }}</td>
                                 <td style="text-align: right; font-weight: 600;">{{ currency_symbol }}{{ "%.2f"|format(r.subtotal) }}</td>
                                 {% if orden.estado in ['received', 'in_progress'] %}
                                 <td style="text-align: center;">
                                     <form method="POST" action="/ordenes/{{ orden.codigo }}/eliminar-repuesto/{{ r.id }}" style="display: inline;">
-                                        <button type="submit" class="btn-remove" title="Eliminar repuesto"
+                                        <button type="submit" class="btn-icon btn-danger-icon" title="Eliminar repuesto"
                                                 onclick="return confirm('Eliminar este repuesto y liberar la reserva?')">
                                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                                 <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
@@ -225,10 +236,10 @@
                         </tbody>
                         <tfoot>
                             <tr>
-                                <td colspan="{% if orden.estado in ['received', 'in_progress'] %}3{% else %}3{% endif %}" style="text-align: right; padding-right: 1rem;">
-                                    <strong>Subtotal:</strong>
+                                <td colspan="{% if orden.estado in ['received', 'in_progress'] %}4{% else %}4{% endif %}" style="text-align: right; padding-right: 1rem;">
+                                    <strong>Total:</strong>
                                 </td>
-                                <td style="text-align: right; font-weight: 600;">
+                                <td style="text-align: right; font-weight: 600; font-size: 1.1rem;">
                                     <strong>{{ currency_symbol }}{{ "%.2f"|format(orden.presupuesto or 0) }}</strong>
                                 </td>
                                 {% if orden.estado in ['received', 'in_progress'] %}
@@ -239,95 +250,126 @@
                     </table>
                 </div>
                 {% else %}
-                <p class="empty-state">No se han agregado repuestos a esta orden.</p>
+                <div class="empty-state-container">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color: var(--text-muted); margin-bottom: 1rem;">
+                        <path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+                    </svg>
+                    <p>No se han agregado repuestos a esta orden.</p>
+                </div>
                 {% endif %}
 
-                <!-- Agregar repuesto -->
                 {% if orden.estado in ['received', 'in_progress'] %}
-                <form method="POST" action="/ordenes/{{ orden.codigo }}/agregar-repuesto" style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border-color);">
-                    <span class="section-label">Agregar Repuesto del Inventario</span>
-                    <div class="form-row-compact">
-                        <div class="form-group" style="flex: 3;">
-                            <label for="repuesto_id">Seleccionar Repuesto</label>
-                            <select id="repuesto_id" name="repuesto_id" required>
-                                <option value="">Buscar repuesto...</option>
-                                {% for r in repuestos_list %}
-                                <option value="{{ r.id }}" data-disponible="{{ r.stock_disponible }}">
-                                    {{ r.nombre }} ({{ r.codigo }}) - Disponible: {{ r.stock_disponible }}
-                                </option>
-                                {% endfor %}
-                            </select>
+                <div class="add-repuesto-section">
+                    <form method="POST" action="/ordenes/{{ orden.codigo }}/agregar-repuesto" class="add-repuesto-form" id="add-repuesto-form">
+                        <div class="add-repuesto-header">
+                            <span class="section-label">Agregar Repuesto del Inventario</span>
+                            <small class="form-hint">El stock se reservara hasta que la orden sea confirmada.</small>
                         </div>
-                        <div class="form-group" style="max-width: 100px;">
-                            <label for="cantidad">Cantidad</label>
-                            <input type="number" id="cantidad" name="cantidad" min="1" value="1" required>
-                        </div>
-                        <button type="submit" class="btn btn-success">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-                            </svg>
-                            Agregar
-                        </button>
-                    </div>
-                    <small style="color: var(--text-muted); font-size: 0.75rem; display: block; margin-top: 0.5rem;">
-                        El stock se reservara hasta que la orden sea confirmada.
-                    </small>
-                </form>
-                {% endif %}
-
-                <!-- Confirmar orden -->
-                {% if orden.estado in ['received', 'in_progress'] and repuestos %}
-                <form method="POST" action="/ordenes/{{ orden.codigo }}/confirmar" style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border-color);">
-                    <div class="form-row">
-                        <div class="form-group" style="flex: 3;">
-                            <label for="observaciones">Observaciones (opcional)</label>
-                            <input type="text" id="observaciones" name="observaciones" placeholder="Notas sobre la confirmacion...">
-                        </div>
-                        <div class="form-group" style="flex: 1; display: flex; align-items: flex-end;">
-                            <button type="submit" class="btn btn-primary" style="width: 100%;"
-                                    onclick="return confirm('Confirmar orden? El stock reservado sera descontado del inventario.')">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <polyline points="20 6 9 17 4 12"/>
+                        <div class="add-repuesto-row">
+                            <div class="form-group" style="flex: 3;">
+                                <label for="repuesto_id">Buscar Repuesto</label>
+                                <select id="repuesto_id" name="repuesto_id" required>
+                                    <option value="">Escribe para buscar...</option>
+                                    {% for r in repuestos_list %}
+                                    <option value="{{ r.id }}" 
+                                            data-disponible="{{ r.stock_disponible }}"
+                                            data-precio="{{ r.precio_venta or r.precio_compra or 0 }}"
+                                            data-codigo="{{ r.codigo }}">
+                                        {{ r.nombre }} ({{ r.codigo }}) - Disponible: {{ r.stock_disponible }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="form-group" style="max-width: 120px;">
+                                <label for="cantidad">Cantidad</label>
+                                <input type="number" id="cantidad" name="cantidad" min="1" value="1" required>
+                            </div>
+                            <button type="submit" class="btn btn-success btn-add-repuesto">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
                                 </svg>
-                                {% if orden.estado == 'received' %}Iniciar Trabajo{% else %}Marcar Completado{% endif %}
+                                Agregar
                             </button>
                         </div>
-                    </div>
-                </form>
+                    </form>
+                </div>
+                {% endif %}
+
+                {% if orden.estado in ['received', 'in_progress'] and repuestos %}
+                <div class="confirm-section">
+                    <form method="POST" action="/ordenes/{{ orden.codigo }}/confirmar" class="confirm-form">
+                        <div class="confirm-content">
+                            <div class="confirm-info">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--color-success);">
+                                    <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                                </svg>
+                                <span>Confirmar orden descontara <strong>{{ repuestos|length }}</strong> repuesto(s) del inventario.</span>
+                            </div>
+                            <div class="confirm-actions">
+                                <textarea id="confirm-observaciones" name="observaciones" rows="2"
+                                          placeholder="Observaciones (opcional)"
+                                          class="confirm-input"></textarea>
+                                <button type="submit" class="btn btn-primary"
+                                        onclick="return confirm('Confirmar orden? El stock reservado sera descontado del inventario.')">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="20 6 9 17 4 12"/>
+                                    </svg>
+                                    {% if orden.estado == 'received' %}Iniciar Trabajo{% else %}Marcar Completado{% endif %}
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
                 {% endif %}
             </div>
         </section>
     </div>
 
     <!-- Historial -->
-    <section class="panel">
-        <header class="panel-header">
-            <h2>Historial de Cambios</h2>
-        </header>
-        <div class="panel-body">
-            {% if historial %}
-            <div class="timeline">
-                {% for h in historial %}
-                <div class="timeline-item" style="animation-delay: {{ loop.index0 * 0.1 }}s;">
-                    <div class="timeline-dot"></div>
-                    <div class="timeline-content">
-                        <div class="timeline-header">
-                            <span class="timeline-title">{{ h.estado_label }}</span>
-                            <span class="timeline-date">{{ h.fecha.strftime('%d/%m/%Y %H:%M') }}</span>
+    <aside class="order-sidebar">
+        <section class="panel">
+            <header class="panel-header">
+                <h2>Historial de Cambios</h2>
+            </header>
+            <div class="panel-body">
+                {% if historial %}
+                <div class="timeline">
+                    {% for h in historial %}
+                    <div class="timeline-item" style="animation-delay: {{ loop.index0 * 0.1 }}s;">
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-content">
+                            <div class="timeline-header">
+                                <span class="timeline-title">{{ h.estado_label }}</span>
+                                <span class="timeline-date">{{ h.fecha.strftime('%d/%m/%Y %H:%M') }}</span>
+                            </div>
+                            <div class="timeline-user">Por: {{ h.usuario_nombre }}</div>
+                            {% if h.observaciones %}
+                            <div class="timeline-note">{{ h.observaciones }}</div>
+                            {% endif %}
                         </div>
-                        <div class="timeline-user">Por: {{ h.usuario_nombre }}</div>
-                        {% if h.observaciones %}
-                        <div class="timeline-note">{{ h.observaciones }}</div>
-                        {% endif %}
                     </div>
+                    {% endfor %}
                 </div>
-                {% endfor %}
+                {% else %}
+                <p class="empty-state">No hay historial de cambios.</p>
+                {% endif %}
             </div>
-            {% else %}
-            <p class="empty-state">No hay historial de cambios.</p>
-            {% endif %}
-        </div>
-    </section>
+        </section>
+    </aside>
 </div>
 
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize autocomplete for parts dropdown
+    var repuestoSelect = document.getElementById('repuesto_id');
+    if (repuestoSelect) {
+        BZAutocomplete.init('#repuesto_id', {
+            placeholder: 'Buscar repuesto por nombre o codigo...'
+        });
+    }
+});
+</script>
 {% endblock %}

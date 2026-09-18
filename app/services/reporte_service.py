@@ -222,3 +222,80 @@ def get_stock_bajo_list(db: Session) -> list:
         Repuesto.activo == True,
         Repuesto.stock_actual <= Repuesto.stock_minimo,
     ).order_by(Repuesto.stock_actual).limit(10).all()
+
+
+def get_tecnico_stats(db: Session, technician_id: int) -> dict:
+    """Get dashboard stats filtered for a specific technician."""
+    ordenes_activas = db.query(func.count(OrdenServicio.id)).filter(
+        OrdenServicio.technician_id == technician_id,
+        OrdenServicio.estado.notin_(["delivered", "cancelled"])
+    ).scalar() or 0
+
+    mes_actual = datetime.now().month
+    anio_actual = datetime.now().year
+
+    completadas_mes = db.query(func.count(OrdenServicio.id)).filter(
+        OrdenServicio.technician_id == technician_id,
+        OrdenServicio.estado == "delivered",
+        extract("month", OrdenServicio.updated_at) == mes_actual,
+        extract("year", OrdenServicio.updated_at) == anio_actual,
+    ).scalar() or 0
+
+    return {
+        "ordenes_activas": ordenes_activas,
+        "completadas_mes": completadas_mes,
+    }
+
+
+def get_ordenes_tecnico_por_estado(db: Session, technician_id: int) -> List[dict]:
+    """Get orders by status for a specific technician."""
+    result = db.query(
+        OrdenServicio.estado,
+        func.count(OrdenServicio.id)
+    ).filter(
+        OrdenServicio.technician_id == technician_id
+    ).group_by(OrdenServicio.estado).all()
+
+    labels = {
+        "received": "Recibido",
+        "diagnosed": "Diagnosticado",
+        "quote_sent": "Presupuesto",
+        "quote_approved": "Aprobado",
+        "in_progress": "En Proceso",
+        "repairing": "Reparando",
+        "ready": "Listo",
+        "delivered": "Entregado",
+        "cancelled": "Cancelado",
+    }
+
+    return [{"estado": labels.get(r[0], r[0]), "cantidad": r[1]} for r in result]
+
+
+def get_ordenes_tecnico_recientes(db: Session, technician_id: int, limit: int = 10) -> List[dict]:
+    """Get recent orders for a specific technician."""
+    ordenes = db.query(OrdenServicio).filter(
+        OrdenServicio.technician_id == technician_id,
+        OrdenServicio.estado.notin_(["delivered", "cancelled"])
+    ).order_by(OrdenServicio.created_at.desc()).limit(limit).all()
+
+    result = []
+    for o in ordenes:
+        result.append({
+            "id": o.id,
+            "codigo": o.codigo,
+            "cliente_nombre": o.cliente.nombre if o.cliente else "N/A",
+            "moto_info": f"{o.moto.marca} {o.moto.modelo}" if o.moto else "N/A",
+            "estado": o.estado,
+            "estado_label": {
+                "received": "Recibido",
+                "diagnosed": "Diagnosticado",
+                "quote_sent": "Presupuesto",
+                "quote_approved": "Aprobado",
+                "in_progress": "En Proceso",
+                "repairing": "Reparando",
+                "ready": "Listo",
+            }.get(o.estado, o.estado),
+            "created_at": o.created_at,
+        })
+
+    return result
