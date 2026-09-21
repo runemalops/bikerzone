@@ -88,7 +88,7 @@
 
         <div class="sidebar-footer">
             <div class="sidebar-user">
-                <div class="sidebar-avatar">{{ user.nombre[0] if user else 'U' }}</div>
+                <div class="sidebar-avatar">{{ user.nombre[:1] if user and user.nombre else 'U' }}</div>
                 <div class="sidebar-user-info">
                     <span class="sidebar-user-name">{{ user.nombre if user else '' }}</span>
                     <a href="/logout" class="sidebar-logout">Salir</a>

@@ -21,6 +21,7 @@ async def lista_motos(
     db: Session = Depends(get_db),
     user: Usuario = Depends(get_current_user),
 ):
+    page = max(1, page)
     motos, total = moto_service.get_motos(db, search=search, client_id=cliente_id, page=page)
     total_pages = max(1, (total + 19) // 20)
     clientes = moto_service.get_clientes_list(db)
@@ -80,11 +81,11 @@ async def crear_moto(
         client_id=client_id,
         marca=marca,
         modelo=modelo,
-        anio=int(anio) if anio else None,
+        anio=int(anio) if anio and anio.strip().isdigit() else None,
         placa=placa or None,
         color=color or None,
         vin=vin or None,
-        kilometraje=int(kilometraje) if kilometraje else 0,
+        kilometraje=int(kilometraje) if kilometraje and kilometraje.strip().isdigit() else 0,
         notas=notas or None,
     )
     moto = moto_service.create_moto(db, data)
@@ -158,11 +159,11 @@ async def actualizar_moto(
     data = MotoUpdate(
         marca=marca,
         modelo=modelo,
-        anio=int(anio) if anio else None,
+        anio=int(anio) if anio and anio.strip().isdigit() else None,
         placa=placa or None,
         color=color or None,
         vin=vin or None,
-        kilometraje=int(kilometraje) if kilometraje else 0,
+        kilometraje=int(kilometraje) if kilometraje and kilometraje.strip().isdigit() else 0,
         notas=notas or None,
     )
     moto = moto_service.update_moto(db, moto_id, data)
@@ -184,6 +185,6 @@ async def eliminar_moto(
 
     deleted = moto_service.delete_moto(db, moto_id)
     if not deleted:
-        raise HTTPException(status_code=404, detail="Moto no encontrada")
+        raise HTTPException(status_code=400, detail="No se puede eliminar: moto no encontrada o con ordenes activas")
 
     return RedirectResponse(url="/motos", status_code=303)

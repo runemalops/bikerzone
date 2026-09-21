@@ -14,7 +14,7 @@ class Cliente(Base):
     telefono = Column(String(20))
     email = Column(String(100))
     direccion = Column(Text)
-    rfc = Column(String(20))
+    nit = Column(String(20))
     notas = Column(Text)
     created_at = Column(DateTime, default=datetime.utcnow)
 

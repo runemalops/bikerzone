@@ -60,7 +60,7 @@
             </header>
             <div class="panel-body">
                 <div class="status-flow">
-                    {% set all_states = ['received', 'diagnosed', 'quote_sent', 'quote_approved', 'in_progress', 'repairing', 'ready', 'delivered'] %}
+                    {% set all_states = ['received', 'diagnosed', 'quote_sent', 'quote_approved', 'in_progress', 'repairing', 'awaiting_part', 'ready', 'delivered', 'quote_rejected', 'cancelled'] %}
                     {% set current_index = all_states.index(orden.estado) if orden.estado in all_states else -1 %}
                     {% for state in all_states %}
                     {% set state_index = loop.index0 %}
@@ -236,7 +236,7 @@
                         </tbody>
                         <tfoot>
                             <tr>
-                                <td colspan="{% if orden.estado in ['received', 'in_progress'] %}4{% else %}4{% endif %}" style="text-align: right; padding-right: 1rem;">
+                                <td colspan="{% if orden.estado in ['received', 'in_progress'] %}5{% else %}4{% endif %}" style="text-align: right; padding-right: 1rem;">
                                     <strong>Total:</strong>
                                 </td>
                                 <td style="text-align: right; font-weight: 600; font-size: 1.1rem;">

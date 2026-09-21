@@ -103,8 +103,9 @@ def update_stock(
     if tipo == "entrada":
         repuesto.stock_actual += cantidad
     elif tipo == "salida":
-        if repuesto.stock_actual < cantidad:
-            return False, f"Stock insuficiente. Disponible: {repuesto.stock_actual}"
+        disponible = repuesto.stock_actual - repuesto.stock_reservado
+        if disponible < cantidad:
+            return False, f"Stock insuficiente. Disponible: {disponible}, reservado: {repuesto.stock_reservado}"
         repuesto.stock_actual -= cantidad
     else:
         return False, "Tipo no valido (entrada/salida)"

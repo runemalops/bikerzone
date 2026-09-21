@@ -260,9 +260,9 @@ def seed():
                 )
                 db.add(detalle)
 
-            oc.subtotal = subtotal_total
-            oc.iva = subtotal_total * 0.12
-            oc.total = subtotal_total * 1.12
+            oc.subtotal = subtotal_total - subtotal_total * settings.IVA_RATE / (1 + settings.IVA_RATE)
+            oc.iva = subtotal_total * settings.IVA_RATE / (1 + settings.IVA_RATE)
+            oc.total = subtotal_total
         db.flush()
 
         db.commit()

@@ -19,10 +19,6 @@ backups/
 *.sql
 *.sql.gz
 
-tests/
-*.test
-.pytest_cache/
-
 .vscode
 .idea
 *.swp

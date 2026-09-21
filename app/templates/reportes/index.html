@@ -24,6 +24,7 @@
 </header>
 
 <div class="dashboard-grid" style="grid-template-columns: repeat(2, 1fr);">
+    {% if user.rol == "admin" %}
     <a href="/reportes/ventas" class="card" style="text-decoration: none; transition: transform 0.2s;">
         <div class="card-body" style="display: flex; align-items: center; gap: 1.5rem; padding: 2rem;">
             <div class="kpi-icon kpi-green" style="width: 64px; height: 64px;">
@@ -37,6 +38,7 @@
             </div>
         </div>
     </a>
+    {% endif %}
 
     <a href="/reportes/inventario" class="card" style="text-decoration: none; transition: transform 0.2s;">
         <div class="card-body" style="display: flex; align-items: center; gap: 1.5rem; padding: 2rem;">
@@ -52,6 +54,7 @@
         </div>
     </a>
 
+    {% if user.rol == "admin" %}
     <a href="/reportes/compras" class="card" style="text-decoration: none; transition: transform 0.2s;">
         <div class="card-body" style="display: flex; align-items: center; gap: 1.5rem; padding: 2rem;">
             <div class="kpi-icon kpi-yellow" style="width: 64px; height: 64px;">
@@ -66,6 +69,7 @@
             </div>
         </div>
     </a>
+    {% endif %}
 
     <a href="/reportes/productividad" class="card" style="text-decoration: none; transition: transform 0.2s;">
         <div class="card-body" style="display: flex; align-items: center; gap: 1.5rem; padding: 2rem;">

@@ -45,7 +45,7 @@ def get_motos(
             "placa": m.placa,
             "color": m.color,
             "kilometraje": m.kilometraje,
-            "cliente_nombre": m.cliente.nombre,
+            "cliente_nombre": m.cliente.nombre if m.cliente else "Sin cliente",
             "total_ordenes": ordenes_count,
         })
 
@@ -81,6 +81,12 @@ def update_moto(db: Session, moto_id: int, data: MotoUpdate) -> Optional[Moto]:
 def delete_moto(db: Session, moto_id: int) -> bool:
     moto = db.query(Moto).filter(Moto.id == moto_id).first()
     if not moto:
+        return False
+
+    any_orders = db.query(func.count(OrdenServicio.id)).filter(
+        OrdenServicio.motorcycle_id == moto_id,
+    ).scalar() or 0
+    if any_orders > 0:
         return False
 
     db.delete(moto)

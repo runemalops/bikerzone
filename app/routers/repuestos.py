@@ -22,6 +22,7 @@ async def lista_repuestos(
     db: Session = Depends(get_db),
     user: Usuario = Depends(get_current_user),
 ):
+    page = max(1, page)
     repuestos, total = repuesto_service.get_repuestos(
         db,
         search=search,

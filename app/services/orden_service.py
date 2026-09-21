@@ -2,6 +2,7 @@ from datetime import datetime
 from typing import Optional, List, Tuple
 from sqlalchemy.orm import Session
 from sqlalchemy import func
+from sqlalchemy import exc as sa_exc
 
 from app.models.orden_servicio import OrdenServicio
 from app.models.historial_estado import HistorialEstado
@@ -110,30 +111,36 @@ def get_orden_by_id(db: Session, orden_id: int) -> Optional[OrdenServicio]:
 
 
 def create_orden(db: Session, data: OrdenServicioCreate, user_id: int) -> OrdenServicio:
-    codigo = generate_codigo(db)
+    for attempt in range(5):
+        codigo = generate_codigo(db)
 
-    orden = OrdenServicio(
-        codigo=codigo,
-        client_id=data.client_id,
-        motorcycle_id=data.motorcycle_id,
-        technician_id=data.technician_id,
-        falla_reportada=data.falla_reportada,
-        kilometraje_entrada=data.kilometraje_entrada,
-        estado="received",
-    )
-    db.add(orden)
-    db.flush()
+        orden = OrdenServicio(
+            codigo=codigo,
+            client_id=data.client_id,
+            motorcycle_id=data.motorcycle_id,
+            technician_id=data.technician_id,
+            falla_reportada=data.falla_reportada,
+            kilometraje_entrada=data.kilometraje_entrada,
+            estado="received",
+        )
+        db.add(orden)
+        try:
+            db.flush()
 
-    historial = HistorialEstado(
-        service_order_id=orden.id,
-        estado="received",
-        user_id=user_id,
-        observaciones="Orden creada",
-    )
-    db.add(historial)
-    db.commit()
-    db.refresh(orden)
-    return orden
+            historial = HistorialEstado(
+                service_order_id=orden.id,
+                estado="received",
+                user_id=user_id,
+                observaciones="Orden creada",
+            )
+            db.add(historial)
+            db.commit()
+            db.refresh(orden)
+            return orden
+        except sa_exc.IntegrityError:
+            db.rollback()
+            continue
+    raise ValueError("No se pudo generar un codigo unico tras varios intentos")
 
 
 def update_orden(db: Session, orden_id: int, data: OrdenServicioUpdate) -> Optional[OrdenServicio]:
@@ -166,6 +173,15 @@ def cambiar_estado(
         return False, f"Transicion no valida: {orden.estado} -> {nuevo_estado}"
 
     orden.estado = nuevo_estado
+
+    if nuevo_estado == "cancelled":
+        items = db.query(OrdenRepuesto).filter(
+            OrdenRepuesto.service_order_id == orden.id
+        ).all()
+        for item in items:
+            repuesto = db.query(Repuesto).filter(Repuesto.id == item.part_id).first()
+            if repuesto:
+                repuesto.stock_reservado = max(0, repuesto.stock_reservado - item.cantidad)
 
     historial = HistorialEstado(
         service_order_id=orden.id,
@@ -289,21 +305,19 @@ def confirmar_orden(
     if not orden:
         return False, "Orden no encontrada"
 
-    items = db.query(OrdenRepuesto).filter(
-        OrdenRepuesto.service_order_id == orden_id
-    ).all()
-
-    for item in items:
-        repuesto = db.query(Repuesto).filter(Repuesto.id == item.part_id).first()
-        if repuesto:
-            if repuesto.stock_reservado >= item.cantidad:
-                repuesto.stock_reservado -= item.cantidad
-                repuesto.stock_actual -= item.cantidad
-            else:
-                repuesto.stock_actual -= item.cantidad
-                repuesto.stock_reservado = 0
-
     if orden.estado == "received":
+        items = db.query(OrdenRepuesto).filter(
+            OrdenRepuesto.service_order_id == orden_id
+        ).all()
+
+        for item in items:
+            repuesto = db.query(Repuesto).filter(Repuesto.id == item.part_id).first()
+            if repuesto:
+                if repuesto.stock_actual < item.cantidad:
+                    return False, f"Stock insuficiente para {repuesto.nombre}: disponible {repuesto.stock_actual}, necesario {item.cantidad}"
+                repuesto.stock_reservado = max(0, repuesto.stock_reservado - item.cantidad)
+                repuesto.stock_actual -= item.cantidad
+
         nuevo_estado = "in_progress"
     elif orden.estado == "in_progress":
         nuevo_estado = "repairing"
@@ -322,7 +336,7 @@ def liberar_reservas_orden(
     ).all()
 
     for item in items:
-        repuesto = db.query(Repuesto).filter(Repuesto.id == item.part_id).first()
+        repuesto = db.query(Repuesto).filter(Repuesto.id == item.part_id).with_for_update().first()
         if repuesto:
             if repuesto.stock_reservado >= item.cantidad:
                 repuesto.stock_reservado -= item.cantidad
@@ -335,6 +349,9 @@ def liberar_reservas_orden(
 def delete_orden(db: Session, orden_id: int) -> bool:
     orden = db.query(OrdenServicio).filter(OrdenServicio.id == orden_id).first()
     if not orden:
+        return False
+
+    if orden.estado in ("in_progress", "repairing", "quote_approved"):
         return False
 
     liberar_reservas_orden(db, orden_id)

@@ -1,6 +1,6 @@
 import csv
 import io
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import List, Dict
 from sqlalchemy.orm import Session
 
@@ -37,7 +37,7 @@ def export_ordenes_csv(
     if fecha_hasta:
         try:
             fecha = datetime.strptime(fecha_hasta, "%Y-%m-%d")
-            query = query.filter(OrdenServicio.created_at <= fecha.replace(hour=23, minute=59))
+            query = query.filter(OrdenServicio.created_at < fecha + timedelta(days=1))
         except ValueError:
             pass
 
@@ -113,7 +113,7 @@ def export_clientes_csv(db: Session) -> str:
     output.write('\ufeff')
     writer = csv.writer(output, delimiter=';')
     writer.writerow([
-        'ID', 'Nombre', 'Telefono', 'Email', 'Direccion', 'RFC',
+        'ID', 'Nombre', 'Telefono', 'Email', 'Direccion', 'NIT',
         'Total Motos', 'Total Ordenes'
     ])
 
@@ -127,7 +127,7 @@ def export_clientes_csv(db: Session) -> str:
             c.telefono or '',
             c.email or '',
             c.direccion or '',
-            c.rfc or '',
+            c.nit or '',
             motos_count,
             ordenes_count,
         ])

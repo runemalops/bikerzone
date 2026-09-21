@@ -12,13 +12,13 @@ class TestClientes:
 
     def test_crear_cliente(self, client, auth_headers):
         response = client.post(
-            "/clientes/nuevo",
+            "/clientes/nueva",
             data={
                 "nombre": "Cliente Nuevo",
                 "telefono": "555-9999",
                 "email": "nuevo@test.com",
                 "direccion": "Nueva Direccion 789",
-                "rfc": "TEST12345678",
+                "nit": "TEST12345678",
             },
             follow_redirects=False,
         )
@@ -32,7 +32,7 @@ class TestClientes:
                 "telefono": "555-0002",
                 "email": "actualizado@test.com",
                 "direccion": "Direccion Actualizada",
-                "rfc": "ACT12345678",
+                "nit": "ACT12345678",
             },
             follow_redirects=False,
         )

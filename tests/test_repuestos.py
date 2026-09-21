@@ -9,7 +9,7 @@ class TestRepuestos:
         response = client.get(f"/repuestos/{sample_repuesto.id}", cookies=auth_headers)
         assert response.status_code == 200
         assert "Filtro de Aceite" in response.text
-        assert "$150.00" in response.text
+        assert "Q150.00" in response.text
 
     def test_crear_repuesto(self, client, auth_headers):
         response = client.post(
@@ -51,8 +51,8 @@ class TestRepuestos:
 
     def test_actualizar_stock(self, client, auth_headers, sample_repuesto):
         response = client.post(
-            f"/repuestos/{sample_repuesto.id}/actualizar-stock",
-            data={"nuevo_stock": "30"},
+            f"/repuestos/{sample_repuesto.id}/stock",
+            data={"cantidad": "10", "tipo": "entrada"},
             follow_redirects=False,
         )
         assert response.status_code == 303

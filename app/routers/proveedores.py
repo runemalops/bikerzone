@@ -20,6 +20,7 @@ async def lista_proveedores(
     db: Session = Depends(get_db),
     user: Usuario = Depends(get_current_user),
 ):
+    page = max(1, page)
     proveedores, total = proveedor_service.get_proveedores(db, search=search, page=page)
     total_pages = max(1, (total + 19) // 20)
 

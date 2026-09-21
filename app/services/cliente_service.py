@@ -48,10 +48,7 @@ def get_cliente(db: Session, cliente_id: int) -> Optional[Cliente]:
 
 
 def create_cliente(db: Session, data: ClienteCreate) -> Cliente:
-    data_dict = data.model_dump()
-    if "nit" in data_dict:
-        data_dict["rfc"] = data_dict.pop("nit")
-    cliente = Cliente(**data_dict)
+    cliente = Cliente(**data.model_dump())
     db.add(cliente)
     db.commit()
     db.refresh(cliente)
@@ -64,8 +61,6 @@ def update_cliente(db: Session, cliente_id: int, data: ClienteUpdate) -> Optiona
         return None
 
     update_data = data.model_dump(exclude_unset=True)
-    if "nit" in update_data:
-        update_data["rfc"] = update_data.pop("nit")
     for key, value in update_data.items():
         setattr(cliente, key, value)
 
@@ -77,6 +72,12 @@ def update_cliente(db: Session, cliente_id: int, data: ClienteUpdate) -> Optiona
 def delete_cliente(db: Session, cliente_id: int) -> bool:
     cliente = db.query(Cliente).filter(Cliente.id == cliente_id).first()
     if not cliente:
+        return False
+
+    any_orders = db.query(func.count(OrdenServicio.id)).filter(
+        OrdenServicio.client_id == cliente_id,
+    ).scalar() or 0
+    if any_orders > 0:
         return False
 
     db.delete(cliente)

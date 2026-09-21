@@ -1,8 +1,10 @@
 class TestOrdenes:
     def test_lista_ordenes(self, client, auth_headers, sample_cliente, sample_moto, db):
         from app.models.orden_servicio import OrdenServicio
+        from tests.conftest import generate_orden_codigo
 
         orden = OrdenServicio(
+            codigo=generate_orden_codigo(db),
             client_id=sample_cliente.id,
             motorcycle_id=sample_moto.id,
             falla_reportada="Falla en el motor",
@@ -17,8 +19,10 @@ class TestOrdenes:
 
     def test_detalle_orden(self, client, auth_headers, sample_cliente, sample_moto, db):
         from app.models.orden_servicio import OrdenServicio
+        from tests.conftest import generate_orden_codigo
 
         orden = OrdenServicio(
+            codigo=generate_orden_codigo(db),
             client_id=sample_cliente.id,
             motorcycle_id=sample_moto.id,
             falla_reportada="Frenos desgastados",
@@ -48,8 +52,10 @@ class TestOrdenes:
 
     def test_cambiar_estado(self, client, auth_headers, sample_cliente, sample_moto, db):
         from app.models.orden_servicio import OrdenServicio
+        from tests.conftest import generate_orden_codigo
 
         orden = OrdenServicio(
+            codigo=generate_orden_codigo(db),
             client_id=sample_cliente.id,
             motorcycle_id=sample_moto.id,
             falla_reportada="Cambio de aceite",
@@ -68,8 +74,10 @@ class TestOrdenes:
 
     def test_editar_orden(self, client, auth_headers, sample_cliente, sample_moto, db):
         from app.models.orden_servicio import OrdenServicio
+        from tests.conftest import generate_orden_codigo
 
         orden = OrdenServicio(
+            codigo=generate_orden_codigo(db),
             client_id=sample_cliente.id,
             motorcycle_id=sample_moto.id,
             falla_reportada="Cambio de aceite",
@@ -93,8 +101,10 @@ class TestOrdenes:
 
     def test_agregar_repuesto(self, client, auth_headers, sample_cliente, sample_moto, sample_repuesto, db):
         from app.models.orden_servicio import OrdenServicio
+        from tests.conftest import generate_orden_codigo
 
         orden = OrdenServicio(
+            codigo=generate_orden_codigo(db),
             client_id=sample_cliente.id,
             motorcycle_id=sample_moto.id,
             falla_reportada="Cambio de aceite",
@@ -113,8 +123,10 @@ class TestOrdenes:
 
     def test_eliminar_orden(self, client, auth_headers, sample_cliente, sample_moto, db):
         from app.models.orden_servicio import OrdenServicio
+        from tests.conftest import generate_orden_codigo
 
         orden = OrdenServicio(
+            codigo=generate_orden_codigo(db),
             client_id=sample_cliente.id,
             motorcycle_id=sample_moto.id,
             falla_reportada="Prueba",
@@ -132,8 +144,10 @@ class TestOrdenes:
 
     def test_flujo_completo(self, client, auth_headers, sample_cliente, sample_moto, sample_repuesto, db):
         from app.models.orden_servicio import OrdenServicio
+        from tests.conftest import generate_orden_codigo
 
         orden = OrdenServicio(
+            codigo=generate_orden_codigo(db),
             client_id=sample_cliente.id,
             motorcycle_id=sample_moto.id,
             falla_reportada="Reparacion completa",

@@ -13,6 +13,7 @@ from app.schemas.orden_compra import (
     FLUJO_ESTADOS_COMPRA,
 )
 from app.services import orden_compra_service
+from app.config import settings
 from app.template_config import templates
 
 router = APIRouter(prefix="/ordenes-compra", tags=["ordenes_compra"])
@@ -28,6 +29,7 @@ async def lista_ordenes_compra(
     db: Session = Depends(get_db),
     user: Usuario = Depends(get_current_user),
 ):
+    page = max(1, page)
     ordenes, total = orden_compra_service.get_ordenes_compra(
         db,
         search=search,
@@ -72,6 +74,7 @@ async def nueva_orden_compra_form(
             "proveedores": proveedores,
             "repuestos": repuestos,
             "proveedor_id": proveedor_id,
+            "settings": settings,
         },
     )
 
@@ -88,12 +91,12 @@ async def crear_orden_compra(
     user: Usuario = Depends(get_current_user),
 ):
     detalles = []
-    for i, rep_id in enumerate(repuestos_ids):
-        if rep_id and cantidades[i] and precios[i]:
+    for rep_id, cant, precio in zip(repuestos_ids, cantidades, precios):
+        if rep_id and cant and precio:
             detalles.append(OrdenCompraDetalleCreate(
                 part_id=int(rep_id),
-                cantidad=int(cantidades[i]),
-                precio_unitario=float(precios[i]),
+                cantidad=int(cant),
+                precio_unitario=float(precio),
             ))
 
     data = OrdenCompraCreate(
@@ -118,6 +121,7 @@ async def crear_orden_compra(
                 "repuestos": repuestos,
                 "proveedor_id": supplier_id,
                 "error": str(e),
+                "settings": settings,
             },
         )
 

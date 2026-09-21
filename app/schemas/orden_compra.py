@@ -1,12 +1,12 @@
 from datetime import datetime
 from typing import Optional, List
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class OrdenCompraDetalleBase(BaseModel):
     part_id: int
-    cantidad: int
-    precio_unitario: float
+    cantidad: int = Field(..., gt=0)
+    precio_unitario: float = Field(..., ge=0)
 
 
 class OrdenCompraDetalleCreate(OrdenCompraDetalleBase):
@@ -69,8 +69,8 @@ ESTADOS_COMPRA = {
 
 FLUJO_ESTADOS_COMPRA = {
     "pending": ["sent", "cancelled"],
-    "sent": ["partial", "received", "cancelled"],
-    "partial": ["received", "cancelled"],
+    "sent": ["partial", "cancelled"],
+    "partial": ["cancelled"],
     "received": [],
     "cancelled": [],
 }

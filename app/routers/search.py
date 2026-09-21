@@ -3,11 +3,13 @@ from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import or_
 
 from app.database import get_db
+from app.models.usuario import Usuario
 from app.models.cliente import Cliente
 from app.models.moto import Moto
 from app.models.orden_servicio import OrdenServicio
 from app.models.repuesto import Repuesto
 from app.models.proveedor import Proveedor
+from app.routers.auth import get_current_user
 
 router = APIRouter(prefix="/api", tags=["search"])
 
@@ -19,6 +21,7 @@ TOTAL_LIMIT = 12
 def search(
     q: str = Query(..., min_length=2),
     db: Session = Depends(get_db),
+    user: Usuario = Depends(get_current_user),
 ):
     results = []
 
@@ -103,7 +106,7 @@ def search(
                 "type": "orden",
                 "title": f"Orden #{o.codigo}",
                 "subtitle": subtitle,
-                "url": f"/ordenes/{o.id}",
+                "url": f"/ordenes/{o.codigo}",
             }
         )
 
