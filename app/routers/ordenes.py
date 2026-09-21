@@ -38,6 +38,7 @@ async def lista_ordenes(
     db: Session = Depends(get_db),
     user: Usuario = Depends(get_current_user),
 ):
+    page = max(1, page)
     ordenes, total = orden_service.get_ordenes(
         db,
         search=search,
@@ -116,9 +117,9 @@ async def crear_orden(
     data = OrdenServicioCreate(
         client_id=client_id,
         motorcycle_id=motorcycle_id,
-        technician_id=int(technician_id) if technician_id else None,
+        technician_id=int(technician_id) if technician_id and technician_id.strip().isdigit() else None,
         falla_reportada=falla_completa,
-        kilometraje_entrada=int(kilometraje_entrada) if kilometraje_entrada else None,
+        kilometraje_entrada=int(kilometraje_entrada) if kilometraje_entrada and kilometraje_entrada.strip().isdigit() else None,
     )
     orden = orden_service.create_orden(db, data, user.id)
     return RedirectResponse(url=f"/ordenes/{orden.codigo}", status_code=303)
@@ -198,9 +199,9 @@ async def actualizar_orden(
 
     data = OrdenServicioUpdate(
         diagnostico=diagnostico or None,
-        presupuesto=float(presupuesto) if presupuesto else None,
-        precio_final=float(precio_final) if precio_final else None,
-        kilometraje_salida=int(kilometraje_salida) if kilometraje_salida else None,
+        presupuesto=float(presupuesto) if presupuesto and presupuesto.replace('.', '', 1).isdigit() else None,
+        precio_final=float(precio_final) if precio_final and precio_final.replace('.', '', 1).isdigit() else None,
+        kilometraje_salida=int(kilometraje_salida) if kilometraje_salida and kilometraje_salida.strip().isdigit() else None,
     )
     orden_service.update_orden(db, orden.id, data)
 
@@ -286,7 +287,10 @@ async def eliminar_orden(
     if not orden:
         raise HTTPException(status_code=404, detail="Orden no encontrada")
 
-    orden_service.delete_orden(db, orden.id)
+    deleted = orden_service.delete_orden(db, orden.id)
+    if not deleted:
+        raise HTTPException(status_code=400, detail="No se puede eliminar una orden en estado activo")
+
     return RedirectResponse(url="/ordenes", status_code=303)
 
 
@@ -334,18 +338,21 @@ async def generar_pdf_orden(
 
     from app.services.pdf_generator import generar_pdf_orden
 
-    with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as tmp:
-        pdf_path = tmp.name
+    pdf_path = None
+    try:
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as tmp:
+            pdf_path = tmp.name
 
-    generar_pdf_orden(datos, pdf_path)
+        generar_pdf_orden(datos, pdf_path)
 
-    with open(pdf_path, 'rb') as f:
-        pdf_content = f.read()
+        with open(pdf_path, 'rb') as f:
+            pdf_content = f.read()
 
-    os.unlink(pdf_path)
-
-    return Response(
-        content=pdf_content,
-        media_type="application/pdf",
-        headers={"Content-Disposition": f"attachment; filename={codigo}.pdf"},
-    )
+        return Response(
+            content=pdf_content,
+            media_type="application/pdf",
+            headers={"Content-Disposition": f"attachment; filename={codigo}.pdf"},
+        )
+    finally:
+        if pdf_path and os.path.exists(pdf_path):
+            os.unlink(pdf_path)

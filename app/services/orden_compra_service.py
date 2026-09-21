@@ -2,7 +2,9 @@ from datetime import datetime
 from typing import Optional, List, Tuple
 from sqlalchemy.orm import Session
 from sqlalchemy import func
+from sqlalchemy import exc as sa_exc
 
+from app.config import settings
 from app.models.orden_compra import OrdenCompra
 from app.models.orden_compra_detalle import OrdenCompraDetalle
 from app.models.repuesto import Repuesto
@@ -85,41 +87,47 @@ def create_orden_compra(
     if not data.detalles:
         raise ValueError("La orden debe incluir al menos un repuesto")
 
-    codigo = generate_codigo(db)
+    for attempt in range(5):
+        codigo = generate_codigo(db)
 
-    subtotal = 0
-    for det in data.detalles:
-        subtotal += det.precio_unitario * det.cantidad
+        total = 0
+        for det in data.detalles:
+            total += det.precio_unitario * det.cantidad
 
-    iva = subtotal * 0.12
-    total = subtotal + iva
+        iva = total * settings.IVA_RATE / (1 + settings.IVA_RATE)
+        subtotal = total - iva
 
-    orden = OrdenCompra(
-        codigo=codigo,
-        supplier_id=data.supplier_id,
-        user_id=user_id,
-        estado="pending",
-        subtotal=subtotal,
-        iva=iva,
-        total=total,
-        notas=data.notas,
-    )
-    db.add(orden)
-    db.flush()
-
-    for det in data.detalles:
-        detalle = OrdenCompraDetalle(
-            purchase_order_id=orden.id,
-            part_id=det.part_id,
-            cantidad=det.cantidad,
-            precio_unitario=det.precio_unitario,
-            subtotal=det.precio_unitario * det.cantidad,
+        orden = OrdenCompra(
+            codigo=codigo,
+            supplier_id=data.supplier_id,
+            user_id=user_id,
+            estado="pending",
+            subtotal=subtotal,
+            iva=iva,
+            total=total,
+            notas=data.notas,
         )
-        db.add(detalle)
+        db.add(orden)
+        try:
+            db.flush()
 
-    db.commit()
-    db.refresh(orden)
-    return orden
+            for det in data.detalles:
+                detalle = OrdenCompraDetalle(
+                    purchase_order_id=orden.id,
+                    part_id=det.part_id,
+                    cantidad=det.cantidad,
+                    precio_unitario=det.precio_unitario,
+                    subtotal=det.precio_unitario * det.cantidad,
+                )
+                db.add(detalle)
+
+            db.commit()
+            db.refresh(orden)
+            return orden
+        except sa_exc.IntegrityError:
+            db.rollback()
+            continue
+    raise ValueError("No se pudo generar un codigo unico tras varios intentos")
 
 
 def cambiar_estado_orden_compra(

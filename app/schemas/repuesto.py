@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class RepuestoBase(BaseModel):
@@ -37,7 +37,7 @@ class RepuestoUpdate(BaseModel):
 
 
 class StockUpdate(BaseModel):
-    cantidad: int
+    cantidad: int = Field(..., gt=0)
     tipo: str  # "entrada" o "salida"
 
 

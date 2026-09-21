@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, Request, Form, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy.orm import Session
+from typing import Optional
 
 from app.database import get_db
 from app.models.usuario import Usuario
@@ -27,6 +28,7 @@ async def lista_usuarios(
 ):
     require_admin(user)
 
+    page = max(1, page)
     usuarios, total = usuario_service.get_usuarios(db, search=search, page=page)
     total_pages = max(1, (total + 19) // 20)
     stats = usuario_service.get_usuarios_stats(db)
@@ -84,8 +86,33 @@ async def crear_usuario(
             status_code=400,
         )
 
-    data = UsuarioCreate(nombre=nombre, email=email, password=password, rol=rol)
-    nuevo = usuario_service.create_usuario(db, data)
+    from pydantic import ValidationError as PydanticValidationError
+    try:
+        data = UsuarioCreate(nombre=nombre, email=email, password=password, rol=rol)
+    except PydanticValidationError:
+        return templates.TemplateResponse(
+            "usuarios/formulario.html",
+            {
+                "request": request,
+                "user": user,
+                "usuario": None,
+                "error": "La contrasena no cumple los requisitos: minimo 8 caracteres, mayuscula, minuscula y numero",
+            },
+            status_code=400,
+        )
+    try:
+        nuevo = usuario_service.create_usuario(db, data)
+    except Exception:
+        return templates.TemplateResponse(
+            "usuarios/formulario.html",
+            {
+                "request": request,
+                "user": user,
+                "usuario": None,
+                "error": "Error al crear usuario",
+            },
+            status_code=400,
+        )
     return RedirectResponse(url=f"/usuarios/{nuevo.id}", status_code=303)
 
 
@@ -134,7 +161,7 @@ async def actualizar_usuario(
     nombre: str = Form(...),
     email: str = Form(...),
     rol: str = Form("tecnico"),
-    activo: str = Form("on"),
+    activo: Optional[str] = Form(None),
     db: Session = Depends(get_db),
     user: Usuario = Depends(get_current_user),
 ):
@@ -157,7 +184,7 @@ async def actualizar_usuario(
         nombre=nombre,
         email=email,
         rol=rol,
-        activo=activo == "on",
+        activo=activo is not None,
     )
     updated = usuario_service.update_usuario(db, usuario_id, data)
     if not updated:
@@ -192,6 +219,9 @@ async def toggle_usuario(
 ):
     require_admin(user)
 
+    if user.id == usuario_id:
+        raise HTTPException(status_code=400, detail="No puedes desactivar tu propia cuenta")
+
     updated = usuario_service.toggle_usuario_activo(db, usuario_id)
     if not updated:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
@@ -211,8 +241,21 @@ async def eliminar_usuario(
     if user.id == usuario_id:
         raise HTTPException(status_code=400, detail="No puedes eliminar tu propia cuenta")
 
+    target = usuario_service.get_usuario(db, usuario_id)
+    if not target:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+
+    if target.rol == "admin":
+        from sqlalchemy import func
+        from app.models.usuario import Usuario as UsuarioModel
+        admin_count = db.query(func.count(UsuarioModel.id)).filter(
+            UsuarioModel.rol == "admin", UsuarioModel.activo == True
+        ).scalar()
+        if admin_count <= 1:
+            raise HTTPException(status_code=400, detail="No se puede eliminar el ultimo administrador")
+
     deleted = usuario_service.delete_usuario(db, usuario_id)
     if not deleted:
-        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+        raise HTTPException(status_code=400, detail="No se puede eliminar el usuario (puede tener ordenes asignadas)")
 
     return RedirectResponse(url="/usuarios", status_code=303)

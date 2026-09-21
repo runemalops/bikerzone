@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func
 
 from app.models.usuario import Usuario
+from app.models.orden_servicio import OrdenServicio
 from app.schemas.usuario import UsuarioCreate, UsuarioUpdate
 from app.services.auth_service import get_password_hash
 
@@ -89,6 +90,19 @@ def change_password(db: Session, usuario_id: int, new_password: str) -> bool:
 def delete_usuario(db: Session, usuario_id: int) -> bool:
     usuario = db.query(Usuario).filter(Usuario.id == usuario_id).first()
     if not usuario:
+        return False
+
+    if usuario.rol == "admin":
+        admin_count = db.query(func.count(Usuario.id)).filter(
+            Usuario.rol == "admin", Usuario.activo == True
+        ).scalar()
+        if admin_count <= 1:
+            return False
+
+    has_orders = db.query(func.count(OrdenServicio.id)).filter(
+        OrdenServicio.technician_id == usuario_id,
+    ).scalar() or 0
+    if has_orders > 0:
         return False
 
     db.delete(usuario)

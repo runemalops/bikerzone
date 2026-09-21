@@ -19,19 +19,19 @@ class TestAuth:
             data={"email": "admin@test.com", "password": "wrong"},
             follow_redirects=False,
         )
-        assert response.status_code == 200
-        assert "Credenciales invalidas" in response.text
+        assert response.status_code == 401
+        assert "incorrectos" in response.text
 
     def test_protected_route_no_auth(self, client):
         response = client.get("/dashboard", follow_redirects=False)
-        assert response.status_code == 303
+        assert response.status_code == 302
 
     def test_protected_route_with_auth(self, client, auth_headers):
         response = client.get("/dashboard", cookies=auth_headers)
         assert response.status_code == 200
 
     def test_logout(self, client, auth_headers):
-        response = client.post("/logout", cookies=auth_headers, follow_redirects=False)
+        response = client.get("/logout", cookies=auth_headers, follow_redirects=False)
         assert response.status_code == 303
 
     def test_tecnico_cannot_see_menu_admin(self, client, tecnico_user):

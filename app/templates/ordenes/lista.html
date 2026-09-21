@@ -132,21 +132,21 @@
 <p class="pagination-summary">Mostrando {{ ((page - 1) * 20 + 1) }}-{{ [page * 20, total] | min }} de {{ total }} ordenes</p>
 <div class="pagination">
     {% if page > 1 %}
-    <a href="/ordenes?page={{ page - 1 }}{% if search %}&search={{ search }}{% endif %}{% if estado %}&estado={{ estado }}{% endif %}">Anterior</a>
+    <a href="/ordenes?page={{ page - 1 }}{% if search %}&search={{ search }}{% endif %}{% if estado %}&estado={{ estado }}{% endif %}{% if tecnico_id %}&technician_id={{ tecnico_id }}{% endif %}{% if client_id %}&client_id={{ client_id }}{% endif %}{% if fecha_desde %}&fecha_desde={{ fecha_desde }}{% endif %}{% if fecha_hasta %}&fecha_hasta={{ fecha_hasta }}{% endif %}">Anterior</a>
     {% endif %}
 
     {% for p in range(1, total_pages + 1) %}
         {% if p == page %}
         <span class="active">{{ p }}</span>
         {% elif p <= 3 or p > total_pages - 3 or (p >= page - 2 and p <= page + 2) %}
-        <a href="/ordenes?page={{ p }}{% if search %}&search={{ search }}{% endif %}{% if estado %}&estado={{ estado }}{% endif %}">{{ p }}</a>
+        <a href="/ordenes?page={{ p }}{% if search %}&search={{ search }}{% endif %}{% if estado %}&estado={{ estado }}{% endif %}{% if tecnico_id %}&technician_id={{ tecnico_id }}{% endif %}{% if client_id %}&client_id={{ client_id }}{% endif %}{% if fecha_desde %}&fecha_desde={{ fecha_desde }}{% endif %}{% if fecha_hasta %}&fecha_hasta={{ fecha_hasta }}{% endif %}">{{ p }}</a>
         {% elif p == 4 or p == total_pages - 3 %}
         <span>...</span>
         {% endif %}
     {% endfor %}
 
     {% if page < total_pages %}
-    <a href="/ordenes?page={{ page + 1 }}{% if search %}&search={{ search }}{% endif %}{% if estado %}&estado={{ estado }}{% endif %}">Siguiente</a>
+    <a href="/ordenes?page={{ page + 1 }}{% if search %}&search={{ search }}{% endif %}{% if estado %}&estado={{ estado }}{% endif %}{% if tecnico_id %}&technician_id={{ tecnico_id }}{% endif %}{% if client_id %}&client_id={{ client_id }}{% endif %}{% if fecha_desde %}&fecha_desde={{ fecha_desde }}{% endif %}{% if fecha_hasta %}&fecha_hasta={{ fecha_hasta }}{% endif %}">Siguiente</a>
     {% endif %}
 </div>
 {% endif %}

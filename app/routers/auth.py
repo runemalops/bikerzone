@@ -73,6 +73,8 @@ async def login(request: Request, response: Response, db: Session = Depends(get_
         key="access_token",
         value=f"Bearer {access_token}",
         httponly=True,
+        samesite="lax",
+        secure=not settings.IS_DEVELOPMENT,
         max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
     )
     return response
@@ -81,7 +83,7 @@ async def login(request: Request, response: Response, db: Session = Depends(get_
 @router.get("/logout")
 async def logout():
     response = RedirectResponse(url="/login", status_code=303)
-    response.delete_cookie("access_token")
+    response.delete_cookie("access_token", samesite="lax")
     return response
 
 

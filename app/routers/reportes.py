@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Request, HTTPException
 from fastapi.responses import HTMLResponse, Response
 from sqlalchemy.orm import Session
 
@@ -30,6 +30,9 @@ async def reporte_ventas(
     db: Session = Depends(get_db),
     user: Usuario = Depends(get_current_user),
 ):
+    if user.rol != "admin":
+        raise HTTPException(status_code=403, detail="Solo administradores pueden ver este reporte")
+
     stats = reporte_service.get_dashboard_stats(db)
     ordenes_mes = reporte_service.get_ordenes_por_mes(db)
     top_clientes = reporte_service.get_top_clientes(db)
@@ -76,6 +79,9 @@ async def reporte_compras(
     db: Session = Depends(get_db),
     user: Usuario = Depends(get_current_user),
 ):
+    if user.rol != "admin":
+        raise HTTPException(status_code=403, detail="Solo administradores pueden ver este reporte")
+
     compras_mes = reporte_service.get_compras_por_mes(db)
     total_compras = sum(c["total"] for c in compras_mes)
 

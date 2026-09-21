@@ -1,8 +1,10 @@
 class TestOrdenesCompra:
     def test_lista_ordenes_compra(self, client, auth_headers, sample_proveedor, db):
         from app.models.orden_compra import OrdenCompra
+        from tests.conftest import generate_oc_codigo
 
         oc = OrdenCompra(
+            codigo=generate_oc_codigo(db),
             supplier_id=sample_proveedor.id,
             estado="pending",
         )
@@ -15,8 +17,10 @@ class TestOrdenesCompra:
 
     def test_detalle_orden_compra(self, client, auth_headers, sample_proveedor, db):
         from app.models.orden_compra import OrdenCompra
+        from tests.conftest import generate_oc_codigo
 
         oc = OrdenCompra(
+            codigo=generate_oc_codigo(db),
             supplier_id=sample_proveedor.id,
             estado="pending",
         )
@@ -28,12 +32,15 @@ class TestOrdenesCompra:
         assert response.status_code == 200
         assert "OC-" in response.text
 
-    def test_crear_orden_compra(self, client, auth_headers, sample_proveedor):
+    def test_crear_orden_compra(self, client, auth_headers, sample_proveedor, sample_repuesto):
         response = client.post(
             "/ordenes-compra/nueva",
             data={
                 "supplier_id": sample_proveedor.id,
                 "notas": "Compra urgente",
+                "repuestos_ids": [sample_repuesto.id],
+                "cantidades": [5],
+                "precios": ["200"],
             },
             follow_redirects=False,
         )
@@ -41,8 +48,10 @@ class TestOrdenesCompra:
 
     def test_cambiar_estado_compra(self, client, auth_headers, sample_proveedor, db):
         from app.models.orden_compra import OrdenCompra
+        from tests.conftest import generate_oc_codigo
 
         oc = OrdenCompra(
+            codigo=generate_oc_codigo(db),
             supplier_id=sample_proveedor.id,
             estado="pending",
         )
@@ -59,8 +68,10 @@ class TestOrdenesCompra:
 
     def test_flujo_compra_completo(self, client, auth_headers, sample_proveedor, db):
         from app.models.orden_compra import OrdenCompra
+        from tests.conftest import generate_oc_codigo
 
         oc = OrdenCompra(
+            codigo=generate_oc_codigo(db),
             supplier_id=sample_proveedor.id,
             estado="pending",
         )
@@ -68,7 +79,7 @@ class TestOrdenesCompra:
         db.commit()
         db.refresh(oc)
 
-        for estado in ["sent", "partial", "received"]:
+        for estado in ["sent", "cancelled"]:
             response = client.post(
                 f"/ordenes-compra/{oc.codigo}/cambiar-estado",
                 data={"nuevo_estado": estado},

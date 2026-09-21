@@ -1,4 +1,5 @@
 import pytest
+from datetime import datetime
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -83,8 +84,8 @@ def tecnico_user(db):
 
 
 @pytest.fixture
-def auth_headers(client):
-    response = client.post("/login", data={"email": "admin@test.com", "password": "admin123"})
+def auth_headers(client, admin_user):
+    response = client.post("/login", data={"email": "admin@test.com", "password": "admin123"}, follow_redirects=False)
     assert response.status_code == 303
     cookies = dict(response.cookies)
     return cookies
@@ -114,7 +115,7 @@ def sample_moto(db, sample_cliente):
         anio=2020,
         kilometraje=15000,
         color="Negro",
-        numero_serie="SN12345",
+        vin="SN12345",
     )
     db.add(moto)
     db.commit()
@@ -149,9 +150,33 @@ def sample_proveedor(db):
         email="proveedor@test.com",
         telefono="555-0002",
         direccion="Av. Industrial 456",
-        persona_contacto="Juan Perez",
+        contacto="Juan Perez",
     )
     db.add(proveedor)
     db.commit()
     db.refresh(proveedor)
     return proveedor
+
+
+def generate_orden_codigo(db):
+    year = datetime.now().year
+    from app.models.orden_servicio import OrdenServicio as OS
+    last = db.query(OS).filter(OS.codigo.like(f"BZ-{year}-%")).order_by(OS.id.desc()).first()
+    if last:
+        last_num = int(last.codigo.split("-")[-1])
+        new_num = last_num + 1
+    else:
+        new_num = 1
+    return f"BZ-{year}-{new_num:05d}"
+
+
+def generate_oc_codigo(db):
+    year = datetime.now().year
+    from app.models.orden_compra import OrdenCompra as OC
+    last = db.query(OC).filter(OC.codigo.like(f"OC-{year}-%")).order_by(OC.id.desc()).first()
+    if last:
+        last_num = int(last.codigo.split("-")[-1])
+        new_num = last_num + 1
+    else:
+        new_num = 1
+    return f"OC-{year}-{new_num:05d}"

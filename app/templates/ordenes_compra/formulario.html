@@ -303,15 +303,16 @@ function initRowEvents(row) {
 }
 
 function calcularTotales() {
-    var subtotal = 0;
+    var total = 0;
     document.querySelectorAll('.detalle-row').forEach(function(row) {
         var cantidad = parseFloat(row.querySelector('.cantidad-input').value) || 0;
         var precio = parseFloat(row.querySelector('.precio-input').value) || 0;
-        subtotal += cantidad * precio;
+        total += cantidad * precio;
     });
 
-    var iva = subtotal * 0.12;
-    var total = subtotal + iva;
+    var ivaRate = {{ settings.IVA_RATE }};
+    var iva = total * ivaRate / (1 + ivaRate);
+    var subtotal = total - iva;
 
     document.getElementById('subtotal').textContent = subtotal.toFixed(2);
     document.getElementById('iva').textContent = iva.toFixed(2);

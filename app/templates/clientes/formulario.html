@@ -57,7 +57,7 @@
                 <div class="form-group">
                     <label for="nit">NIT</label>
                     <input type="text" id="nit" name="nit"
-                           value="{{ cliente.rfc if cliente and cliente.rfc else '' }}"
+                           value="{{ cliente.nit if cliente and cliente.nit else '' }}"
                            placeholder="1234567-8"
                            pattern="[0-9]{1,10}-?[0-9Kk]">
                     <small style="color: var(--text-muted); font-size: 0.75rem; margin-top: 0.25rem; display: block;">Formato: 1234567-8 o 12345678</small>

@@ -1,8 +1,10 @@
 class TestExport:
     def test_export_ordenes_csv(self, client, auth_headers, sample_cliente, sample_moto, db):
         from app.models.orden_servicio import OrdenServicio
+        from tests.conftest import generate_orden_codigo
 
         orden = OrdenServicio(
+            codigo=generate_orden_codigo(db),
             client_id=sample_cliente.id,
             motorcycle_id=sample_moto.id,
             falla_reportada="Prueba de export",
@@ -27,8 +29,10 @@ class TestExport:
 
     def test_export_orden_pdf(self, client, auth_headers, sample_cliente, sample_moto, db):
         from app.models.orden_servicio import OrdenServicio
+        from tests.conftest import generate_orden_codigo
 
         orden = OrdenServicio(
+            codigo=generate_orden_codigo(db),
             client_id=sample_cliente.id,
             motorcycle_id=sample_moto.id,
             falla_reportada="Prueba de PDF",

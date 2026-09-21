@@ -1,13 +1,13 @@
 class TestSpanishSupport:
     def test_clientes_with_spanish_chars(self, client, auth_headers):
         response = client.post(
-            "/clientes/nuevo",
+            "/clientes/nueva",
             data={
                 "nombre": "Juan García López",
                 "telefono": "555-0001",
                 "email": "garcia@test.com",
                 "direccion": "Calle Niño Jesus 123",
-                "rfc": "GARCL800101ABC",
+                "nit": "GARCL800101ABC",
             },
             follow_redirects=False,
         )
@@ -60,8 +60,10 @@ class TestSpanishSupport:
 
     def test_ordenes_csv_encoding(self, client, auth_headers, sample_cliente, sample_moto, db):
         from app.models.orden_servicio import OrdenServicio
+        from tests.conftest import generate_orden_codigo
 
         orden = OrdenServicio(
+            codigo=generate_orden_codigo(db),
             client_id=sample_cliente.id,
             motorcycle_id=sample_moto.id,
             falla_reportada="Falla en el Niño",

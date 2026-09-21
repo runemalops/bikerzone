@@ -20,6 +20,7 @@ async def lista_clientes(
     db: Session = Depends(get_db),
     user: Usuario = Depends(get_current_user),
 ):
+    page = max(1, page)
     clientes, total = cliente_service.get_clientes(db, search=search, page=page)
     total_pages = max(1, (total + 19) // 20)
 
@@ -155,6 +156,6 @@ async def eliminar_cliente(
 
     deleted = cliente_service.delete_cliente(db, cliente_id)
     if not deleted:
-        raise HTTPException(status_code=404, detail="Cliente no encontrado")
+        raise HTTPException(status_code=400, detail="No se puede eliminar: cliente tiene ordenes registradas")
 
     return RedirectResponse(url="/clientes", status_code=303)

@@ -28,10 +28,10 @@
                 <span class="detail-meta-value">{{ cliente.email }}</span>
             </div>
             {% endif %}
-            {% if cliente.rfc %}
+            {% if cliente.nit %}
             <div class="detail-meta-item">
                 <span class="detail-meta-label">NIT</span>
-                <span class="detail-meta-value">{{ cliente.rfc }}</span>
+                <span class="detail-meta-value">{{ cliente.nit }}</span>
             </div>
             {% endif %}
         </div>
@@ -170,8 +170,10 @@
                         <tr>
                             <td><a href="/ordenes/{{ orden.codigo }}" style="font-weight: 600;">{{ orden.codigo }}</a></td>
                             <td>
-                                {% if orden.estado == 'completed' %}
+                                {% if orden.estado == 'delivered' %}
                                 <span class="badge badge-success">Completada</span>
+                                {% elif orden.estado == 'cancelled' %}
+                                <span class="badge badge-danger">Cancelada</span>
                                 {% elif orden.estado == 'in_progress' %}
                                 <span class="badge badge-warning">En Progreso</span>
                                 {% elif orden.estado == 'received' %}
