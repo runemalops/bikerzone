@@ -17,7 +17,7 @@ class OrdenServicioCreate(OrdenServicioBase):
 class OrdenServicioUpdate(BaseModel):
     diagnostico: Optional[str] = None
     presupuesto: Optional[float] = None
-    precio_final: Optional[float] = None
+    mano_obra: Optional[float] = None
     kilometraje_salida: Optional[int] = None
 
 

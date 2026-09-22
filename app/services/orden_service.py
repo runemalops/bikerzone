@@ -152,6 +152,7 @@ def update_orden(db: Session, orden_id: int, data: OrdenServicioUpdate) -> Optio
     for key, value in update_data.items():
         setattr(orden, key, value)
 
+    recalcular_precio_final(db, orden_id)
     db.commit()
     db.refresh(orden)
     return orden
@@ -234,6 +235,21 @@ def get_repuestos_orden(db: Session, orden_id: int) -> list:
     return result
 
 
+def recalcular_precio_final(db: Session, orden_id: int) -> None:
+    """Recalcula el precio_final = suma_subtotales_repuestos + mano_obra."""
+    from decimal import Decimal
+
+    items = db.query(OrdenRepuesto).filter(
+        OrdenRepuesto.service_order_id == orden_id
+    ).all()
+    subtotal_repuestos = sum(float(item.subtotal or 0) for item in items)
+
+    orden = db.query(OrdenServicio).filter(OrdenServicio.id == orden_id).first()
+    if orden:
+        mano_obra = float(orden.mano_obra or 0)
+        orden.precio_final = Decimal(str(subtotal_repuestos + mano_obra))
+
+
 def add_repuesto_orden(
     db: Session,
     orden_id: int,
@@ -265,6 +281,7 @@ def add_repuesto_orden(
         subtotal=subtotal,
     )
     db.add(item)
+    recalcular_precio_final(db, orden_id)
     db.commit()
 
     return True, f"Repuesto {repuesto.nombre} agregado (stock reservado)"
@@ -290,6 +307,7 @@ def remove_repuesto_orden(
             repuesto.stock_reservado = 0
 
     db.delete(item)
+    recalcular_precio_final(db, orden_id)
     db.commit()
 
     return True, "Repuesto eliminado"
@@ -318,8 +336,14 @@ def confirmar_orden(
                 repuesto.stock_reservado = max(0, repuesto.stock_reservado - item.cantidad)
                 repuesto.stock_actual -= item.cantidad
 
+        recalcular_precio_final(db, orden_id)
+        db.commit()
+
         nuevo_estado = "in_progress"
     elif orden.estado == "in_progress":
+        recalcular_precio_final(db, orden_id)
+        db.commit()
+
         nuevo_estado = "repairing"
     else:
         return False, f"Estado no valido para confirmar: {orden.estado}"

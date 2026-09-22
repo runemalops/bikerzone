@@ -176,6 +176,7 @@ def generate_orden_pdf_data(db: Session, codigo: str) -> dict:
         'diagnostico': orden.diagnostico or '',
         'estado': orden.estado,
         'presupuesto': float(orden.presupuesto) if orden.presupuesto else 0,
+        'mano_obra': float(orden.mano_obra) if orden.mano_obra else 0,
         'precio_final': float(orden.precio_final) if orden.precio_final else 0,
         'repuestos': repuestos_list,
         'subtotal_repuestos': subtotal_repuestos,

@@ -22,8 +22,7 @@ Sistema de gestion para taller de motocicletas.
 
 ```bash
 # Clonar y entrar al directorio
-cd bikerzone_dev/bikerzone
-
+cd bikerzone
 # Levantar servicios
 docker compose up -d
 
@@ -36,6 +35,16 @@ docker compose exec web python -m services.seed
 ```
 
 ## Credenciales por defecto
+## Testing
+Para ejecutar los tests unitarios y de integración se recomienda usar el siguiente comando (asumiendo un Makefile):
+```bash
+make test
+```
+O si está configurado para npm scripts:
+```bash
+npm run test
+```
+Asegúrese de que la base de datos esté inicializada antes de correr los tests.
 
 | Usuario | Email | Contrasena | Rol |
 |---------|-------|------------|-----|

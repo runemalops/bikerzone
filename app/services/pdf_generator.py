@@ -112,7 +112,9 @@ def generar_pdf_orden(datos, output_path, currency_symbol=None):
     story.append(Spacer(1, 8))
     summary_data = [
         ['Presupuesto:', f"{currency_symbol}{datos['presupuesto']:.2f}", 'Fecha Entrada:', datos['fecha_entrada']],
-        ['Precio Final:', f"{currency_symbol}{datos['precio_final']:.2f}", 'Fecha Salida:', datos['fecha_salida']],
+        ['Subtotal Repuestos:', f"{currency_symbol}{datos['subtotal_repuestos']:.2f}", 'Fecha Salida:', datos['fecha_salida']],
+        ['Mano de Obra:', f"{currency_symbol}{datos['mano_obra']:.2f}", '', ''],
+        ['Total:', f"{currency_symbol}{datos['precio_final']:.2f}", '', ''],
     ]
     summary_table = Table(summary_data, colWidths=[1.4*inch, 1.6*inch, 1.4*inch, 2.6*inch])
     summary_table.setStyle(TableStyle([
@@ -122,6 +124,9 @@ def generar_pdf_orden(datos, output_path, currency_symbol=None):
         ('ALIGN', (3, 0), (3, -1), 'RIGHT'),
         ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
         ('FONTNAME', (2, 0), (2, -1), 'Helvetica-Bold'),
+        ('FONTNAME', (0, -1), (1, -1), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, -1), (1, -1), 11),
+        ('LINEABOVE', (0, -1), (1, -1), 1, colors.HexColor('#1a1a1a')),
     ]))
     story.append(summary_table)
 

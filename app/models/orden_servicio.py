@@ -18,6 +18,7 @@ class OrdenServicio(Base):
     diagnostico = Column(Text)
     estado = Column(String(30), default="received")
     presupuesto = Column(Numeric(10, 2))
+    mano_obra = Column(Numeric(10, 2), default=0)
     precio_final = Column(Numeric(10, 2))
     kilometraje_entrada = Column(Integer)
     kilometraje_salida = Column(Integer)
