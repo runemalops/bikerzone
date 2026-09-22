@@ -138,6 +138,7 @@ async def detalle_orden(
 
     historial = orden_service.get_historial(db, orden.id)
     repuestos = orden_service.get_repuestos_orden(db, orden.id)
+    subtotal_repuestos = sum(r['subtotal'] for r in repuestos)
     estados_posibles = FLUJO_ESTADOS.get(orden.estado, [])
     repuestos_list = orden_service.getRepuestosList(db)
     falla_decodificada = decodificar_falla_reportada(orden.falla_reportada)
@@ -150,6 +151,7 @@ async def detalle_orden(
             "orden": orden,
             "historial": historial,
             "repuestos": repuestos,
+            "subtotal_repuestos": subtotal_repuestos,
             "estados_posibles": estados_posibles,
             "estados_labels": ESTADO_LABELS,
             "repuestos_list": repuestos_list,
@@ -188,7 +190,7 @@ async def actualizar_orden(
     codigo: str,
     diagnostico: str = Form(""),
     presupuesto: str = Form(""),
-    precio_final: str = Form(""),
+    mano_obra: str = Form(""),
     kilometraje_salida: str = Form(""),
     db: Session = Depends(get_db),
     user: Usuario = Depends(get_current_user),
@@ -200,7 +202,7 @@ async def actualizar_orden(
     data = OrdenServicioUpdate(
         diagnostico=diagnostico or None,
         presupuesto=float(presupuesto) if presupuesto and presupuesto.replace('.', '', 1).isdigit() else None,
-        precio_final=float(precio_final) if precio_final and precio_final.replace('.', '', 1).isdigit() else None,
+        mano_obra=float(mano_obra) if mano_obra and mano_obra.replace('.', '', 1).isdigit() else None,
         kilometraje_salida=int(kilometraje_salida) if kilometraje_salida and kilometraje_salida.strip().isdigit() else None,
     )
     orden_service.update_orden(db, orden.id, data)
