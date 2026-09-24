@@ -265,15 +265,74 @@ docker compose -f docker-compose.prod.yml logs web | grep -i smtp
 
 ### 7. Copias de seguridad
 
+`scripts/backup.sh` genera un dump de PostgreSQL **con validacion de datos** y verifica que el archivo sea restaurable antes de dar por bueno el backup.
+
+#### Qué valida
+
+| Fase | Chequeo |
+|------|---------|
+| Origen | Las 13 tablas requeridas existen |
+| Origen | `users` tiene filas (admin presente), `alembic_version` = 1 revision |
+| Origen | Campos NOT NULL criticos (emails, codigos de orden, nombres, etc.) |
+| Origen | Integridad referencial: sin huerfanos en FKs de motos, ordenes, repuestos, OC, notificaciones |
+| Origen | Reglas basicas: kilometraje/stock/cantidades no negativos |
+| Archivo | Dump no vacio, `gzip -t` integro, checksum SHA-256 |
+| Restauracion | Restaura en una BD temporal `bikerzone_verify_<fecha>` |
+| Restauracion | Re-ejecuta todas las validaciones sobre el restaurado |
+| Restauracion | Compara recuentos de filas: origen == restaurado |
+
+Si el origen tiene datos invalidos, el script **no** crea el dump y sale con codigo 2 (usa `--force` para respaldar de todos modos). Si la verificacion de restauracion falla, el archivo se renombra a `*.failed` y sale con codigo 1.
+
+#### Uso
+
 ```bash
-# Backup de la base de datos (gzip, guarda en ./backups)
+# Desarrollo (docker-compose.yml)
 ./scripts/backup.sh
 
-# Restaurar
-./scripts/restore.sh backups/bikerzone_YYYYMMDD_HHMMSS.sql.gz
+# Produccion (docker-compose.prod.yml)
+COMPOSE_FILE=docker-compose.prod.yml ./scripts/backup.sh
+
+# Mas rapido: omite restaurar en BD temporal
+./scripts/backup.sh --no-restore-verify
+
+# Respaldar aunque el origen tenga fallos de validacion
+./scripts/backup.sh --force
 ```
 
-Los backups se conservan automaticamente (ultimos 7).
+#### Nombre del backup (fecha y hora)
+
+```
+backups/bikerzone_AAAAMMDD_HHMMSS.sql.gz
+backups/bikerzone_AAAAMMDD_HHMMSS.sql.gz.sha256
+```
+
+Ejemplo: `backups/bikerzone_20260923_225516.sql.gz` (23 sep 2026, 22:55:16).
+
+#### Codigo de salida
+
+| Codigo | Significado |
+|--------|-------------|
+| `0` | Backup creado y todas las validaciones OK |
+| `1` | Error de dump, o verificacion de restauracion fallida (`*.failed`) |
+| `2` | Datos invalidos en el origen (sin `--force` no hay dump; con `--force` si) |
+
+#### Restaurar
+
+```bash
+COMPOSE_FILE=docker-compose.prod.yml ./scripts/restore.sh backups/bikerzone_AAAAMMDD_HHMMSS.sql.gz
+```
+
+#### Programar con cron (diario 03:00)
+
+```bash
+crontab -e
+```
+
+```cron
+0 3 * * * cd /ruta/a/bikerzone && COMPOSE_FILE=docker-compose.prod.yml ./scripts/backup.sh >> backups/backup.log 2>&1
+```
+
+Los backups se conservan automaticamente (ultimos 7 por defecto; cambia `KEEP_BACKUPS=14`). El directorio `backups/` esta en `.gitignore`.
 
 ### 8. Actualizaciones
 
@@ -292,7 +351,7 @@ docker compose -f docker-compose.prod.yml exec web python -m alembic upgrade hea
 - [ ] `ENVIRONMENT=production` (desactiva `/docs`)
 - [ ] SMTP configurado y probado (o desactivado a proposito)
 - [ ] Certificado TLS activo en nginx
-- [ ] Backup programado (cron con `scripts/backup.sh`)
+- [ ] Backup programado y probado (cron con `scripts/backup.sh`, exit 0)
 - [ ] Puerto 5432 y 8000 **no** expuestos a Internet (solo `127.0.0.1`)
 
 ---

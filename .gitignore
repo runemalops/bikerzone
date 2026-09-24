@@ -31,6 +31,9 @@ docker-compose.override.yml
 *.db
 *.sqlite3
 
+# Backups
+backups/
+
 # Logs
 *.log
 
