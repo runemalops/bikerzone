@@ -39,11 +39,20 @@ services:
       CURRENCY_SYMBOL: ${CURRENCY_SYMBOL:-Q}
       CURRENCY_CODE: ${CURRENCY_CODE:-GTQ}
       CURRENCY_DECIMALS: ${CURRENCY_DECIMALS:-2}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_FROM: ${SMTP_FROM:-}
+      SMTP_USE_TLS: ${SMTP_USE_TLS:-true}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
     depends_on:
       db:
         condition: service_healthy
     volumes:
       - ./app:/app/app
+      - ./migrations:/app/migrations
+      - ./alembic.ini:/app/alembic.ini:ro
 
   nginx:
     image: nginx:alpine

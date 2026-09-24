@@ -8,6 +8,8 @@ from app.models.orden_repuesto import OrdenRepuesto
 from app.models.proveedor import Proveedor
 from app.models.orden_compra import OrdenCompra
 from app.models.orden_compra_detalle import OrdenCompraDetalle
+from app.models.site_config import SiteConfig
+from app.models.notificacion import Notificacion
 
 __all__ = [
     "Usuario",
@@ -20,4 +22,6 @@ __all__ = [
     "Proveedor",
     "OrdenCompra",
     "OrdenCompraDetalle",
+    "SiteConfig",
+    "Notificacion",
 ]

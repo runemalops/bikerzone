@@ -3,19 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - BikerZone</title>
-    <link rel="icon" type="image/svg+xml" href="/static/img/logo.svg">
+    <title>Login - {{ site_title() }}</title>
+    <link rel="icon" href="{{ site_logo() }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/static/css/style.css?v=3.0">
+    <link rel="stylesheet" href="/static/css/style.css?v=3.7">
 </head>
 <body class="login-body">
     <div class="login-wrapper">
         <div class="login-card">
             <div class="login-header">
-                <img src="/static/img/logo.svg" alt="BikerZone" class="login-logo">
-                <h1>BikerZone</h1>
+                <img src="{{ site_logo() }}" alt="{{ site_title() }}" class="login-logo">
+                <h1>{{ site_title() }}</h1>
                 <p>Sistema de gestion para taller</p>
             </div>
 

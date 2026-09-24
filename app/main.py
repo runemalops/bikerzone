@@ -19,6 +19,8 @@ from app.routers import dashboard as dashboard_router
 from app.routers import reportes as reportes_router
 from app.routers import search as search_router
 from app.routers import usuarios as usuarios_router
+from app.routers import configuracion as configuracion_router
+from app.routers import preventivo as preventivo_router
 
 import os
 
@@ -52,7 +54,28 @@ def ensure_admin():
 async def lifespan(app: FastAPI):
     Base.metadata.create_all(bind=engine)
     ensure_admin()
+
+    import asyncio
+
+    async def recordatorios_preventivos():
+        # primera pasada tras 60s, luego cada 6 horas
+        await asyncio.sleep(60)
+        while True:
+            try:
+                db = SessionLocal()
+                try:
+                    from app.services import preventivo_service
+
+                    await asyncio.to_thread(preventivo_service.enviar_recordatorios_pendientes, db)
+                finally:
+                    db.close()
+            except Exception:
+                pass
+            await asyncio.sleep(6 * 3600)
+
+    tarea = asyncio.create_task(recordatorios_preventivos())
     yield
+    tarea.cancel()
 
 
 app = FastAPI(
@@ -77,6 +100,8 @@ app.include_router(dashboard_router.router)
 app.include_router(reportes_router.router)
 app.include_router(search_router.router)
 app.include_router(usuarios_router.router)
+app.include_router(configuracion_router.router)
+app.include_router(preventivo_router.router)
 
 
 @app.get("/", response_class=HTMLResponse)

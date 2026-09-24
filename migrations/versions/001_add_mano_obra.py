@@ -14,7 +14,10 @@ depends_on = None
 
 
 def upgrade() -> None:
-    op.add_column("service_orders", sa.Column("mano_obra", sa.Numeric(10, 2), server_default="0"))
+    bind = op.get_bind()
+    cols = {c["name"] for c in sa.inspect(bind).get_columns("service_orders")}
+    if "mano_obra" not in cols:
+        op.add_column("service_orders", sa.Column("mano_obra", sa.Numeric(10, 2), server_default="0"))
 
 
 def downgrade() -> None:

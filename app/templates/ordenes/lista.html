@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Ordenes de Servicio - BikerZone{% endblock %}
+{% block title %}Ordenes de Servicio - {{ site_title() }}{% endblock %}
 
 {% block breadcrumbs %}
 <nav class="breadcrumbs">
@@ -17,7 +17,7 @@
         <h1>Ordenes de Servicio</h1>
         <p>{{ total }} ordenes registradas</p>
     </div>
-    <div style="display: flex; gap: 0.5rem;">
+    <div class="page-header-actions">
         <a href="/ordenes/export/csv?estado={{ estado }}&fecha_desde={{ fecha_desde }}&fecha_hasta={{ fecha_hasta }}" class="btn btn-secondary">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
@@ -82,7 +82,7 @@
 
 <div class="card">
     <div class="table-wrapper">
-        <table>
+        <table class="ordenes-table">
             <thead>
                 <tr>
                     <th>Codigo</th>
@@ -90,23 +90,23 @@
                     <th>Moto</th>
                     <th>Falla</th>
                     <th>Estado</th>
-                    <th>Presupuesto</th>
+                    <th class="col-presupuesto">Presupuesto</th>
                     <th>Total</th>
-                    <th>Fecha</th>
+                    <th class="col-fecha">Fecha</th>
                     <th>Acciones</th>
                 </tr>
             </thead>
             <tbody>
                 {% for orden in ordenes %}
                 <tr data-href="/ordenes/{{ orden.codigo }}">
-                    <td><strong><a href="/ordenes/{{ orden.codigo }}">{{ orden.codigo }}</a></strong></td>
+                    <td class="cell-code"><strong><a href="/ordenes/{{ orden.codigo }}">{{ orden.codigo }}</a></strong></td>
                     <td>{{ orden.cliente_nombre }}</td>
-                    <td>{{ orden.moto_info }}</td>
-                    <td style="max-width: 200px;">{{ orden.falla_reportada[:40] }}{% if orden.falla_reportada|length > 40 %}...{% endif %}</td>
+                    <td><div class="cell-moto">{{ orden.moto_info }}</div></td>
+                    <td><div class="cell-falla">{{ orden.falla_reportada[:40] }}{% if orden.falla_reportada|length > 40 %}...{% endif %}</div></td>
                     <td><span class="badge badge-info">{{ orden.estado_label }}</span></td>
-                    <td>{% if orden.presupuesto %}{{ currency_symbol }}{{ "%.2f"|format(orden.presupuesto) }}{% else %}-{% endif %}</td>
-                    <td>{% if orden.precio_final %}{{ currency_symbol }}{{ "%.2f"|format(orden.precio_final) }}{% else %}-{% endif %}</td>
-                    <td>{{ orden.created_at.strftime('%d/%m/%Y') }}</td>
+                    <td class="col-presupuesto cell-nowrap">{% if orden.presupuesto %}{{ currency_symbol }}{{ "%.2f"|format(orden.presupuesto) }}{% else %}-{% endif %}</td>
+                    <td class="cell-nowrap">{% if orden.precio_final %}{{ currency_symbol }}{{ "%.2f"|format(orden.precio_final) }}{% else %}-{% endif %}</td>
+                    <td class="col-fecha cell-nowrap">{{ orden.created_at.strftime('%d/%m/%Y') }}</td>
                     <td>
                         <a href="/ordenes/{{ orden.codigo }}" class="btn btn-sm btn-primary">Ver</a>
                     </td>

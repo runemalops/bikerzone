@@ -192,6 +192,12 @@ def cambiar_estado(
     )
     db.add(historial)
     db.commit()
+
+    if nuevo_estado == "ready":
+        from app.services import notificacion_service
+
+        notificacion_service.auto_notificar_orden_lista(db, orden)
+
     return True, f"Estado cambiado a {ESTADO_LABELS.get(nuevo_estado, nuevo_estado)}"
 
 

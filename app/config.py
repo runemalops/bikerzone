@@ -70,6 +70,17 @@ class Settings:
     # Tax
     IVA_RATE: float = float(os.getenv("IVA_RATE", "0.12"))
 
+    # Notificaciones - Email (SMTP)
+    SMTP_HOST: str = os.getenv("SMTP_HOST", "")
+    SMTP_PORT: int = int(os.getenv("SMTP_PORT", "587"))
+    SMTP_USER: str = os.getenv("SMTP_USER", "")
+    SMTP_PASSWORD: str = os.getenv("SMTP_PASSWORD", "")
+    SMTP_FROM: str = os.getenv("SMTP_FROM", "")
+    SMTP_USE_TLS: bool = os.getenv("SMTP_USE_TLS", "true").lower() in ("1", "true", "yes")
+
+    # Notificaciones - Telegram (Bot API)
+    TELEGRAM_BOT_TOKEN: str = os.getenv("TELEGRAM_BOT_TOKEN", "")
+
     @property
     def IS_DEVELOPMENT(self) -> bool:
         return self.ENVIRONMENT == "development"

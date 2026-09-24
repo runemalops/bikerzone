@@ -13,6 +13,7 @@ class Cliente(Base):
     nombre = Column(String(150), nullable=False)
     telefono = Column(String(20))
     email = Column(String(100))
+    telegram_chat_id = Column(String(50))
     direccion = Column(Text)
     nit = Column(String(20))
     notas = Column(Text)
