@@ -17,3 +17,5 @@ class SiteConfig(Base):
     notif_telegram_auto = Column(Boolean, nullable=False, default=True)
     preventivo_dias_anticipacion = Column(Integer, nullable=False, default=7)
     preventivo_km_anticipacion = Column(Integer, nullable=False, default=500)
+    # Km a sumar al kilometraje de salida para reprogramar el proximo servicio (0 = no reprogramar)
+    preventivo_km_intervalo = Column(Integer, nullable=False, default=5000)

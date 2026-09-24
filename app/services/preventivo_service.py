@@ -26,7 +26,7 @@ def _config(db: Session) -> SiteConfig:
 
 
 def evaluar_moto(moto: Moto, config: SiteConfig, hoy: Optional[date] = None) -> dict:
-    """Clifica el service preventivo de una moto."""
+    """Clasifica el servicio preventivo de una moto."""
     hoy = hoy or date.today()
     dias = config.preventivo_dias_anticipacion or 7
     km_ante = config.preventivo_km_anticipacion or 500
@@ -121,10 +121,10 @@ def mensaje_preventivo(moto: Moto, estado: dict) -> Tuple[str, str]:
     cliente = moto.cliente
     nombre = cliente.nombre if cliente else "cliente"
     moto_info = f"{moto.marca} {moto.modelo}"
-    asunto = f"{titulo}: Service preventivo {'vencido' if estado['nivel'] == 'vencido' else 'proximo'} - {moto_info}"
+    asunto = f"{titulo}: Servicio preventivo {'vencido' if estado['nivel'] == 'vencido' else 'proximo'} - {moto_info}"
     cuerpo = (
         f"Hola {nombre},\n\n"
-        f"Te recordamos que el service preventivo de tu {moto_info}"
+        f"Te recordamos que el servicio preventivo de tu {moto_info}"
         + (f" (placa {moto.placa})" if moto.placa else "")
         + f" esta {estado['nivel_label'].lower()}.\n"
         + (f"Detalle: {estado['detalle']}\n" if estado["detalle"] else "")
@@ -205,7 +205,7 @@ def _log_preventivo(db: Session, canal: str, estado: str, asunto: str, mensaje: 
 
 def enviar_recordatorios_pendientes(db: Session) -> int:
     """Aviso automatico (email/telegram) para preventivos vencidos/proximos.
-    Dedupe por referencia: una sola vez por ciclo de service."""
+    Dedupe por referencia: una sola vez por ciclo de servicio."""
     config = _config(db)
     hoy = date.today()
     filas, _ = get_panel(db, hoy)

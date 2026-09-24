@@ -45,6 +45,17 @@ services:
       ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@bikerzone.com}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin123}
       ENVIRONMENT: ${ENVIRONMENT:-production}
+      CURRENCY_SYMBOL: ${CURRENCY_SYMBOL:-Q}
+      CURRENCY_CODE: ${CURRENCY_CODE:-GTQ}
+      CURRENCY_DECIMALS: ${CURRENCY_DECIMALS:-2}
+      IVA_RATE: ${IVA_RATE:-0.12}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_FROM: ${SMTP_FROM:-}
+      SMTP_USE_TLS: ${SMTP_USE_TLS:-true}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
     depends_on:
       db:
         condition: service_healthy

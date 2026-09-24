@@ -98,15 +98,15 @@
                           class="textarea-sm">{{ moto.notas if moto and moto.notas else '' }}</textarea>
             </div>
 
-            <h3 style="font-size: 0.95rem; margin: 1.25rem 0 0.75rem;">Service Preventivo</h3>
+            <h3 style="font-size: 0.95rem; margin: 1.25rem 0 0.75rem;">Servicio Preventivo</h3>
             <div class="form-row">
                 <div class="form-group">
-                    <label for="proximo_service_fecha">Proximo service (fecha)</label>
+                    <label for="proximo_service_fecha">Proximo Servicio (fecha)</label>
                     <input type="date" id="proximo_service_fecha" name="proximo_service_fecha"
                            value="{{ moto.proximo_service_fecha.isoformat() if moto and moto.proximo_service_fecha else '' }}">
                 </div>
                 <div class="form-group">
-                    <label for="proximo_service_km">Proximo service (kilometraje)</label>
+                    <label for="proximo_service_km">Proximo Servicio (kilometraje)</label>
                     <input type="number" id="proximo_service_km" name="proximo_service_km"
                            value="{{ moto.proximo_service_km if moto and moto.proximo_service_km is not none else '' }}"
                            placeholder="Ej: 10000" min="0">

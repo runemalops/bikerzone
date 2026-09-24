@@ -241,7 +241,7 @@ class TestPanelPreventivo:
     def test_vacio(self, client, auth_headers, sample_moto):
         r = client.get("/preventivo", cookies=auth_headers)
         assert r.status_code == 200
-        assert "No hay services programados" in r.text
+        assert "No hay servicios programados" in r.text
 
     def test_vencido_por_fecha(self, client, auth_headers, sample_moto, db):
         self._programar(db, sample_moto, fecha=date.today() - timedelta(days=1))

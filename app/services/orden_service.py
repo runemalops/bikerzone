@@ -152,10 +152,39 @@ def update_orden(db: Session, orden_id: int, data: OrdenServicioUpdate) -> Optio
     for key, value in update_data.items():
         setattr(orden, key, value)
 
+    if update_data.get("kilometraje_salida") is not None:
+        sincronizar_moto_tras_salida(db, orden)
+
     recalcular_precio_final(db, orden_id)
     db.commit()
     db.refresh(orden)
     return orden
+
+
+def sincronizar_moto_tras_salida(db: Session, orden: OrdenServicio) -> None:
+    """Al cerrar con kilometraje de salida: actualiza la moto y reprograma el preventivo.
+
+    - moto.kilometraje nunca baja (se toma el maximo con la salida).
+    - proximo_service_km se recalcula a salida + intervalo solo si estaba sin programar
+      o ya alcanzado/vencido. intervalo = SiteConfig.preventivo_km_intervalo (0 = no reprogramar).
+    """
+    moto = orden.moto
+    if not moto or orden.kilometraje_salida is None:
+        return
+
+    salida = orden.kilometraje_salida
+    moto.kilometraje = max(int(moto.kilometraje or 0), int(salida))
+
+    from app.services import site_service
+
+    config = site_service.get_site_config(db)
+    intervalo = int(config.preventivo_km_intervalo or 0)
+    if intervalo <= 0:
+        return
+
+    actual = int(moto.kilometraje or 0)
+    if moto.proximo_service_km is None or actual >= moto.proximo_service_km:
+        moto.proximo_service_km = actual + intervalo
 
 
 def cambiar_estado(

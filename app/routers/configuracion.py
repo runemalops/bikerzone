@@ -54,6 +54,7 @@ async def guardar_notificaciones(
     notif_telegram_auto: str | None = Form(None),
     preventivo_dias_anticipacion: str = Form("7"),
     preventivo_km_anticipacion: str = Form("500"),
+    preventivo_km_intervalo: str = Form("5000"),
     db: Session = Depends(get_db),
     user: Usuario = Depends(get_current_user),
 ):
@@ -62,18 +63,23 @@ async def guardar_notificaciones(
     try:
         dias = int(preventivo_dias_anticipacion)
         km = int(preventivo_km_anticipacion)
+        intervalo = int(preventivo_km_intervalo)
     except ValueError:
         return _form_response(request, user, site_service.get_site_config(db), db,
                               error="Los valores de anticipacion deben ser numeros")
     if not (1 <= dias <= 365) or not (0 <= km <= 100000):
         return _form_response(request, user, site_service.get_site_config(db), db,
                               error="Dias: 1-365. Kilometros: 0-100000")
+    if not (0 <= intervalo <= 100000):
+        return _form_response(request, user, site_service.get_site_config(db), db,
+                              error="Intervalo de servicio: 0-100000 km")
 
     config = site_service.get_site_config(db)
     config.notif_email_auto = bool(notif_email_auto)
     config.notif_telegram_auto = bool(notif_telegram_auto)
     config.preventivo_dias_anticipacion = dias
     config.preventivo_km_anticipacion = km
+    config.preventivo_km_intervalo = intervalo
     db.commit()
     site_service.invalidate_cache()
     return RedirectResponse(url="/configuracion?ok=1", status_code=303)
