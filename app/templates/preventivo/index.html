@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+{% block title %}Preventivo - {{ site_title() }}{% endblock %}
+
+{% block breadcrumbs %}
+<nav class="breadcrumbs">
+    <a href="/dashboard">Inicio</a>
+    <span class="separator">/</span>
+    <span class="current">Preventivo</span>
+</nav>
+{% endblock %}
+
+{% block content %}
+<header class="page-header">
+    <div class="page-header-content">
+        <h1>Service Preventivo</h1>
+        <p>Control de proximos services: vencidos, por vencer y programados</p>
+    </div>
+    <div class="page-header-actions">
+        <a href="/motos/nueva" class="btn btn-primary">+ Registrar Moto</a>
+    </div>
+</header>
+
+<div class="stats-grid" style="margin-bottom: 1.5rem;">
+    <div class="kpi-card kpi-red">
+        <div class="kpi-content">
+            <span class="kpi-value" style="color: var(--color-danger);">{{ resumen.vencidos }}</span>
+            <span class="kpi-label">Vencidos</span>
+        </div>
+    </div>
+    <div class="kpi-card kpi-yellow">
+        <div class="kpi-content">
+            <span class="kpi-value" style="color: var(--color-warning);">{{ resumen.proximos }}</span>
+            <span class="kpi-label">Proximos</span>
+        </div>
+    </div>
+    <div class="kpi-card kpi-green">
+        <div class="kpi-content">
+            <span class="kpi-value" style="color: var(--color-success);">{{ resumen.ok }}</span>
+            <span class="kpi-label">Programados OK</span>
+        </div>
+    </div>
+    <div class="kpi-card kpi-blue">
+        <div class="kpi-content">
+            <span class="kpi-value">{{ resumen.sin_programar }}</span>
+            <span class="kpi-label">Sin programar</span>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body" style="padding: 0;">
+        {% if filas %}
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Cliente</th>
+                        <th>Moto</th>
+                        <th>Proximo service</th>
+                        <th>Estado</th>
+                        <th>Contacto</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for fila in filas %}
+                    <tr>
+                        <td class="cell-nowrap">{{ fila.cliente.nombre if fila.cliente else 'Sin cliente' }}</td>
+                        <td class="cell-nowrap">
+                            {{ fila.moto.marca }} {{ fila.moto.modelo }}
+                            {% if fila.moto.placa %}<br><small style="color: var(--text-muted);">{{ fila.moto.placa }}</small>{% endif %}
+                        </td>
+                        <td style="font-size: 0.85rem;">
+                            {% if fila.moto.proximo_service_fecha %}
+                            <div>{{ fila.moto.proximo_service_fecha.strftime('%d/%m/%Y') }}</div>
+                            {% endif %}
+                            {% if fila.moto.proximo_service_km %}
+                            <div>{{ "{:,}".format(fila.moto.proximo_service_km).replace(",", ".") }} km</div>
+                            {% endif %}
+                            <small style="color: var(--text-muted);">actual: {{ "{:,}".format(fila.moto.kilometraje or 0).replace(",", ".") }} km</small>
+                        </td>
+                        <td>
+                            <span class="badge {% if fila.estado.nivel == 'vencido' %}badge-danger{% elif fila.estado.nivel == 'proximo' %}badge-warning{% else %}badge-success{% endif %}">
+                                {{ fila.estado.nivel_label }}
+                            </span>
+                            {% if fila.estado.detalle %}
+                            <div style="font-size: 0.72rem; color: var(--text-muted); max-width: 200px; margin-top: 0.2rem;">{{ fila.estado.detalle }}</div>
+                            {% endif %}
+                        </td>
+                        <td style="font-size: 0.8rem;">
+                            {% if fila.cliente %}
+                            {{ fila.cliente.email or 'sin email' }}<br>
+                            {{ ('+502 ' + fila.cliente.telefono) if fila.cliente.telefono else 'sin telefono' }}
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if fila.estado.requiere_aviso and fila.tiene_contacto %}
+                            <div style="display: flex; gap: 0.35rem; flex-wrap: wrap;">
+                                {% if fila.cliente and fila.cliente.email %}
+                                <form method="POST" action="/preventivo/{{ fila.moto.id }}/recordatorio/email" style="display: inline;">
+                                    <button type="submit" class="btn btn-primary btn-sm">Email</button>
+                                </form>
+                                {% endif %}
+                                {% if fila.cliente and fila.cliente.telegram_chat_id %}
+                                <form method="POST" action="/preventivo/{{ fila.moto.id }}/recordatorio/telegram" style="display: inline;">
+                                    <button type="submit" class="btn btn-primary btn-sm">Telegram</button>
+                                </form>
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                            <a href="/motos/{{ fila.moto.id }}/editar" class="btn btn-secondary btn-sm" style="margin-top: 0.35rem;">Editar</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div style="padding: 2rem; text-align: center; color: var(--text-muted);">
+            <p>No hay services programados aun.</p>
+            <p style="font-size: 0.85rem;">Registra el <strong>proximo service (fecha y/o km)</strong> en el formulario de cada moto para controlarlos aqui.</p>
+            <a href="/motos" class="btn btn-primary" style="margin-top: 0.75rem;">Ir a Motos</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

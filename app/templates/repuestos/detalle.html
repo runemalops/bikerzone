@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}{{ repuesto.nombre }} - BikerZone{% endblock %}
+{% block title %}{{ repuesto.nombre }} - {{ site_title() }}{% endblock %}
 
 {% block breadcrumbs %}
 <nav class="breadcrumbs">
@@ -147,7 +147,7 @@
                 </form>
 
                 <div style="margin-top: 1.25rem; padding: 1rem; background: var(--bg-input); border: 1px solid var(--border-color); border-radius: var(--border-radius);">
-                    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 1rem;">
+                    <div class="flex-between" style="align-items: flex-end; margin-bottom: 1rem;">
                         <div>
                             <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.25rem;">Stock Actual</div>
                             <div style="font-size: 2rem; font-weight: 700; line-height: 1; {% if repuesto.stock_actual == 0 %}color: var(--color-danger);{% elif repuesto.stock_actual <= repuesto.stock_minimo %}color: var(--color-warning);{% else %}color: var(--color-success);{% endif %}">
@@ -166,7 +166,7 @@
                         <div style="height: 100%; width: {{ bar_pct }}%; border-radius: 999px; transition: width 0.3s ease; {% if repuesto.stock_actual == 0 %}background: var(--color-danger);{% elif repuesto.stock_actual <= repuesto.stock_minimo %}background: var(--color-warning);{% else %}background: var(--color-success);{% endif %}"></div>
                     </div>
 
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div class="flex-between" style="align-items: center;">
                         <span style="font-size: 0.75rem; color: var(--text-muted);">
                             {% if repuesto.stock_actual == 0 %}
                                 Sin stock - Reabastecer urgentemente

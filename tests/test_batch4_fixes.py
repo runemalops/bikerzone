@@ -193,9 +193,17 @@ class TestPasswordHintConsistency:
 # ==========================================
 class TestLoginCssVersion:
     def test_login_css_version_matches_base(self, client):
+        import re
+        from pathlib import Path
+
         login_response = client.get("/login", follow_redirects=False)
         assert login_response.status_code == 200
-        assert "style.css?v=3.0" in login_response.text
+        base_html = Path("app/templates/base.html").read_text(encoding="utf-8")
+        v_login = re.search(r"style\.css\?v=([\w.]+)", login_response.text)
+        v_base = re.search(r"style\.css\?v=([\w.]+)", base_html)
+        assert v_login, "login page must link style.css with a version"
+        assert v_base, "base.html must link style.css with a version"
+        assert v_login.group(1) == v_base.group(1)
 
 
 # ==========================================

@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 from typing import Optional
 from pydantic import BaseModel
 
@@ -12,6 +12,8 @@ class MotoBase(BaseModel):
     color: Optional[str] = None
     vin: Optional[str] = None
     kilometraje: int = 0
+    proximo_service_km: Optional[int] = None
+    proximo_service_fecha: Optional[date] = None
     notas: Optional[str] = None
 
 
@@ -27,6 +29,8 @@ class MotoUpdate(BaseModel):
     color: Optional[str] = None
     vin: Optional[str] = None
     kilometraje: Optional[int] = None
+    proximo_service_km: Optional[int] = None
+    proximo_service_fecha: Optional[date] = None
     notas: Optional[str] = None
 
 

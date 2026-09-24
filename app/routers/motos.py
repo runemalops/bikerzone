@@ -1,6 +1,23 @@
 from fastapi import APIRouter, Depends, Request, Form, HTTPException, Query
 from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy.orm import Session
+from datetime import date
+
+
+def _parse_fecha(value: str):
+    value = (value or "").strip()
+    if not value:
+        return None
+    try:
+        return date.fromisoformat(value)
+    except ValueError:
+        return None
+
+
+def _parse_int(value: str):
+    value = (value or "").strip()
+    return int(value) if value.isdigit() else None
+
 
 from app.database import get_db
 from app.models.usuario import Usuario
@@ -73,6 +90,8 @@ async def crear_moto(
     color: str = Form(""),
     vin: str = Form(""),
     kilometraje: str = Form("0"),
+    proximo_service_km: str = Form(""),
+    proximo_service_fecha: str = Form(""),
     notas: str = Form(""),
     db: Session = Depends(get_db),
     user: Usuario = Depends(get_current_user),
@@ -86,6 +105,8 @@ async def crear_moto(
         color=color or None,
         vin=vin or None,
         kilometraje=int(kilometraje) if kilometraje and kilometraje.strip().isdigit() else 0,
+        proximo_service_km=_parse_int(proximo_service_km),
+        proximo_service_fecha=_parse_fecha(proximo_service_fecha),
         notas=notas or None,
     )
     moto = moto_service.create_moto(db, data)
@@ -152,6 +173,8 @@ async def actualizar_moto(
     color: str = Form(""),
     vin: str = Form(""),
     kilometraje: str = Form("0"),
+    proximo_service_km: str = Form(""),
+    proximo_service_fecha: str = Form(""),
     notas: str = Form(""),
     db: Session = Depends(get_db),
     user: Usuario = Depends(get_current_user),
@@ -164,6 +187,8 @@ async def actualizar_moto(
         color=color or None,
         vin=vin or None,
         kilometraje=int(kilometraje) if kilometraje and kilometraje.strip().isdigit() else 0,
+        proximo_service_km=_parse_int(proximo_service_km),
+        proximo_service_fecha=_parse_fecha(proximo_service_fecha),
         notas=notas or None,
     )
     moto = moto_service.update_moto(db, moto_id, data)

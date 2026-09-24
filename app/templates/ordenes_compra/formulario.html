@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Nueva Orden de Compra - BikerZone{% endblock %}
+{% block title %}Nueva Orden de Compra - {{ site_title() }}{% endblock %}
 
 {% block breadcrumbs %}
 <nav class="breadcrumbs">
@@ -52,7 +52,7 @@
     </div>
 
     <div class="card" style="margin-bottom: 1.5rem;">
-        <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
             <h2 style="font-size: 1rem; font-weight: 600; margin: 0;">Repuestos</h2>
             <button type="button" id="add-detalle" class="btn btn-sm btn-secondary">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -65,16 +65,16 @@
             <table id="detalles-table">
                 <thead>
                     <tr>
-                        <th style="width: 40%; padding: 0.75rem 1rem;">Repuesto</th>
-                        <th style="width: 15%; padding: 0.75rem 1rem; text-align: center;">Cantidad</th>
-                        <th style="width: 20%; padding: 0.75rem 1rem; text-align: right;">Precio Unit.</th>
-                        <th style="width: 20%; padding: 0.75rem 1rem; text-align: right;">Subtotal</th>
-                        <th style="width: 5%; padding: 0.75rem 0.5rem;"></th>
+                        <th style="width: 40%;">Repuesto</th>
+                        <th style="width: 15%; text-align: center;">Cantidad</th>
+                        <th style="width: 20%; text-align: right;">Precio Unit.</th>
+                        <th style="width: 20%; text-align: right;">Subtotal</th>
+                        <th style="width: 5%;"></th>
                     </tr>
                 </thead>
                 <tbody id="detalles-body">
                     <tr class="detalle-row">
-                        <td style="padding: 0.5rem 1rem;">
+                        <td>
                             <div class="bz-ac-parent" style="position: relative;">
                                 <input type="text" class="repuesto-search" placeholder="Buscar por nombre o codigo..."
                                        autocomplete="off">
@@ -83,21 +83,21 @@
                                 <div class="bz-autocomplete-list" style="display: none;"></div>
                             </div>
                         </td>
-                        <td style="padding: 0.5rem 1rem; text-align: center;">
+                        <td style="text-align: center;">
                             <input type="number" name="cantidades" class="cantidad-input"
-                                   min="1" value="1" required style="width: 70px; text-align: center;">
+                                   min="1" value="1" required style="width: 70px; max-width: 100%; text-align: center;">
                         </td>
-                        <td style="padding: 0.5rem 1rem; text-align: right;">
+                        <td style="text-align: right;">
                             <div class="price-input-wrapper">
                                 <span class="currency-symbol">{{ currency_symbol }}</span>
                                 <input type="number" name="precios" class="precio-input"
-                                       step="0.01" min="0" required style="width: 110px; text-align: right;">
+                                       step="0.01" min="0" required style="width: 110px; max-width: 100%; text-align: right;">
                             </div>
                         </td>
-                        <td style="padding: 0.5rem 1rem; text-align: right; font-weight: 600;">
+                        <td style="text-align: right; font-weight: 600;">
                             <span class="subtotal-display">{{ currency_symbol }}0.00</span>
                         </td>
-                        <td style="padding: 0.5rem 0.5rem; text-align: center;">
+                        <td style="text-align: center;">
                             <button type="button" class="btn-remove" title="Eliminar">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
@@ -110,9 +110,8 @@
         </div>
     </div>
 
-    <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 2rem;">
-        <div style="flex: 1;"></div>
-        <div style="width: 300px;">
+    <div class="totals-row">
+        <div class="totals-box">
             <div class="summary-box">
                 <div class="summary-row">
                     <span class="summary-row-label" style="font-weight: 600;">Subtotal:</span>
@@ -164,7 +163,7 @@ function crearFilaRepuesto() {
     var newRow = document.createElement('tr');
     newRow.className = 'detalle-row';
     newRow.innerHTML = `
-        <td style="padding: 0.5rem 1rem;">
+        <td>
             <div class="bz-ac-parent" style="position: relative;">
                 <input type="text" class="repuesto-search" placeholder="Buscar por nombre o codigo..."
                        autocomplete="off">
@@ -173,21 +172,21 @@ function crearFilaRepuesto() {
                 <div class="bz-autocomplete-list" style="display: none;"></div>
             </div>
         </td>
-        <td style="padding: 0.5rem 1rem; text-align: center;">
+        <td style="text-align: center;">
             <input type="number" name="cantidades" class="cantidad-input"
-                   min="1" value="1" required style="width: 70px; text-align: center;">
+                   min="1" value="1" required style="width: 70px; max-width: 100%; text-align: center;">
         </td>
-        <td style="padding: 0.5rem 1rem; text-align: right;">
+        <td style="text-align: right;">
             <div class="price-input-wrapper">
                 <span class="currency-symbol">{{ currency_symbol }}</span>
                 <input type="number" name="precios" class="precio-input"
-                       step="0.01" min="0" required style="width: 110px; text-align: right;">
+                       step="0.01" min="0" required style="width: 110px; max-width: 100%; text-align: right;">
             </div>
         </td>
-        <td style="padding: 0.5rem 1rem; text-align: right; font-weight: 600;">
+        <td style="text-align: right; font-weight: 600;">
             <span class="subtotal-display">{{ currency_symbol }}0.00</span>
         </td>
-        <td style="padding: 0.5rem 0.5rem; text-align: center;">
+        <td style="text-align: center;">
             <button type="button" class="btn-remove" title="Eliminar">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>

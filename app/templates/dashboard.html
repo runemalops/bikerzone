@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Dashboard - BikerZone{% endblock %}
+{% block title %}Dashboard - {{ site_title() }}{% endblock %}
 
 {% block head %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -167,7 +167,7 @@
 
 {% else %}
 {# ===== TECHNICIAN DASHBOARD ===== #}
-<div class="dashboard-grid" style="grid-template-columns: repeat(2, 1fr);">
+<div class="dashboard-grid cols-2">
     <div class="kpi-card">
         <div class="kpi-icon kpi-blue">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

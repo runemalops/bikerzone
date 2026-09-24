@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Orden de Compra {{ orden.codigo }} - BikerZone</title>
+    <title>Orden de Compra {{ orden.codigo }} - {{ site_title() }}</title>
     <style>
         * {
             margin: 0;
@@ -197,7 +197,7 @@
 <body>
     <div class="header">
         <div class="company-info">
-            <h1>BikerZone</h1>
+            <h1>{{ site_title() }}</h1>
             <p>Sistema de Gestion de Taller Mecanico</p>
         </div>
         <div class="order-info">
@@ -278,7 +278,7 @@
     {% endif %}
 
     <div class="footer">
-        <p>Documento generado el {{ orden.created_at.strftime('%d/%m/%Y %H:%M') }} - BikerZone Sistema de Gestion</p>
+        <p>Documento generado el {{ orden.created_at.strftime('%d/%m/%Y %H:%M') }} - {{ site_title() }} Sistema de Gestion</p>
     </div>
 </body>
 </html>

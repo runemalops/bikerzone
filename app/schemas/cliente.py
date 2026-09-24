@@ -7,6 +7,7 @@ class ClienteBase(BaseModel):
     nombre: str
     telefono: Optional[str] = None
     email: Optional[EmailStr] = None
+    telegram_chat_id: Optional[str] = None
     direccion: Optional[str] = None
     nit: Optional[str] = None
     notas: Optional[str] = None
@@ -20,6 +21,7 @@ class ClienteUpdate(BaseModel):
     nombre: Optional[str] = None
     telefono: Optional[str] = None
     email: Optional[EmailStr] = None
+    telegram_chat_id: Optional[str] = None
     direccion: Optional[str] = None
     nit: Optional[str] = None
     notas: Optional[str] = None

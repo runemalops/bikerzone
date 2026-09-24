@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}{{ usuario.nombre }} - BikerZone{% endblock %}
+{% block title %}{{ usuario.nombre }} - {{ site_title() }}{% endblock %}
 
 {% block breadcrumbs %}
 <nav class="breadcrumbs">
@@ -46,7 +46,7 @@
     </div>
 </header>
 
-<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+<div class="detail-grid-2">
     <div class="card">
         <div class="card-header">
             <h2 style="font-size: 1rem; font-weight: 600;">Informacion del Usuario</h2>

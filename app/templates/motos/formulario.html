@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}{% if moto %}Editar Moto{% else %}Nueva Moto{% endif %} - BikerZone{% endblock %}
+{% block title %}{% if moto %}Editar Moto{% else %}Nueva Moto{% endif %} - {{ site_title() }}{% endblock %}
 
 {% block breadcrumbs %}
 <nav class="breadcrumbs">
@@ -96,6 +96,22 @@
                 <textarea id="notas" name="notas" rows="2"
                           placeholder="Informacion adicional sobre la moto..."
                           class="textarea-sm">{{ moto.notas if moto and moto.notas else '' }}</textarea>
+            </div>
+
+            <h3 style="font-size: 0.95rem; margin: 1.25rem 0 0.75rem;">Service Preventivo</h3>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="proximo_service_fecha">Proximo service (fecha)</label>
+                    <input type="date" id="proximo_service_fecha" name="proximo_service_fecha"
+                           value="{{ moto.proximo_service_fecha.isoformat() if moto and moto.proximo_service_fecha else '' }}">
+                </div>
+                <div class="form-group">
+                    <label for="proximo_service_km">Proximo service (kilometraje)</label>
+                    <input type="number" id="proximo_service_km" name="proximo_service_km"
+                           value="{{ moto.proximo_service_km if moto and moto.proximo_service_km is not none else '' }}"
+                           placeholder="Ej: 10000" min="0">
+                    <small style="color: var(--text-muted); font-size: 0.75rem; margin-top: 0.25rem; display: block;">El panel Preventivo avisara al cliente cuando este por vencer o vencido</small>
+                </div>
             </div>
 
             <div class="form-actions">

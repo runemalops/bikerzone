@@ -143,6 +143,30 @@ async def detalle_orden(
     repuestos_list = orden_service.getRepuestosList(db)
     falla_decodificada = decodificar_falla_reportada(orden.falla_reportada)
 
+    from app.services import notificacion_service
+
+    notificaciones = notificacion_service.get_notificaciones_orden(db, orden.id)
+    _, mensaje_wa = notificacion_service.mensaje_orden_lista(orden)
+    wa_link = None
+    if orden.cliente:
+        wa_link = notificacion_service.link_whatsapp(orden.cliente.telefono, mensaje_wa)
+
+    # resultados de envio manual (?notif=ok:email | ?notif=err:telegram:<motivo>)
+    import urllib.parse
+
+    success = error = None
+    notif_param = request.query_params.get("notif")
+    if notif_param:
+        label = {"email": "Email", "telegram": "Telegram"}.get(
+            notif_param.split(":")[1] if ":" in notif_param else "", "el canal")
+        if notif_param.startswith("ok:"):
+            success = f"Notificacion enviada por {label}"
+        elif notif_param.startswith("err:") and notif_param.count(":") >= 2:
+            canal = notif_param.split(":")[1]
+            motivo = urllib.parse.unquote(notif_param.split(":", 2)[2])
+            label = {"email": "Email", "telegram": "Telegram"}.get(canal, canal)
+            error = f"No se pudo enviar por {label}: {motivo}"
+
     return templates.TemplateResponse(
         "ordenes/detalle.html",
         {
@@ -157,8 +181,41 @@ async def detalle_orden(
             "repuestos_list": repuestos_list,
             "falla_decodificada": falla_decodificada,
             "catalogo_servicios": SERVICIOS_CATALOGO,
+            "notificaciones": notificaciones,
+            "wa_link": wa_link,
+            "success": success,
+            "error": error,
         },
     )
+
+
+@router.post("/{codigo}/notificar/{canal}")
+def notificar_orden(
+    codigo: str,
+    canal: str,
+    db: Session = Depends(get_db),
+    user: Usuario = Depends(get_current_user),
+):
+    import urllib.parse
+
+    from app.services import notificacion_service
+
+    if canal not in ("email", "telegram"):
+        raise HTTPException(status_code=400, detail="Canal no soportado")
+
+    orden = orden_service.get_orden(db, codigo)
+    if not orden:
+        raise HTTPException(status_code=404, detail="Orden no encontrada")
+
+    resultados = notificacion_service.notificar_orden_lista(db, orden, canal=canal)
+    r = resultados[0] if resultados else {"estado": "fallido", "error": "Error inesperado"}
+
+    if r["estado"] == "enviado":
+        url = f"/ordenes/{codigo}?notif=ok:{canal}"
+    else:
+        motivo = urllib.parse.quote(r.get("error") or "Error desconocido", safe="")
+        url = f"/ordenes/{codigo}?notif=err:{canal}:{motivo}"
+    return RedirectResponse(url=url, status_code=303)
 
 
 @router.post("/{codigo}/cambiar-estado")
