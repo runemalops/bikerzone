@@ -1,0 +1,32 @@
+# Variante para servidores con traefik (u otro proxy) ya dueño del puerto 80.
+# No es la configuracion de produccion estandar: esa es docker-compose.prod.yml.
+#
+# Uso:
+#   docker compose -f docker-compose.prod.yml -f docker-compose.traefik.yml up -d --build
+#   docker compose -f docker-compose.prod.yml -f docker-compose.traefik.yml ps
+#
+# Cambios respecto al prod original:
+#   - nginx publica 8088:80 (80 y 443 quedan para traefik; 8443 lo usa nginx-proxy-manager)
+#   - db publica 127.0.0.1:5434 (5432 lo usa el postgres del homelab)
+#   - nginx se une a la red externa web_network con el alias "bikerzone"
+#     para que traefik resuelva http://bikerzone:80
+
+services:
+  db:
+    ports: !override
+      - "127.0.0.1:5434:5432"
+
+  nginx:
+    ports: !override
+      - "8088:80"
+    networks: !override
+      default:
+      web:
+        aliases:
+          - bikerzone
+
+networks:
+  default:
+  web:
+    external: true
+    name: web_network

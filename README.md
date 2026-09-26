@@ -90,78 +90,18 @@ Guia paso a paso para desplegar BikerZone en un servidor con Docker Compose (per
 
 | Servicio | Expuesto | Descripcion |
 |----------|----------|-------------|
-| nginx | `0.0.0.0:8088` | Reverse proxy interno; entra por **traefik** (`:80`) |
+| nginx | `0.0.0.0:80` y `0.0.0.0:443` | Reverse proxy, estaticos, TLS |
 | web | `127.0.0.1:8000` (interno) | FastAPI + Uvicorn (4 workers) |
-| db | `127.0.0.1:5434` (interno) | PostgreSQL 16 con volumen persistente |
+| db | `127.0.0.1:5432` (interno) | PostgreSQL 16 con volumen persistente |
 
-> **Puertos ocupados en el servidor (no reutilizar):** `80` y `8080` (traefik),
-> `81`, `8084`, `8443` (nginx-proxy-manager), `8081` (nginx), `8082` (wordpress),
-> `8083` (pihole), `8085` (qbittorrent), `8086` (cadvisor), `5432` (postgres del
-> homelab), `8087` (nginx del stack de desarrollo), `9000` (portainer).
-> BikerZone usa **8088**, **5434** y **8000**.
+Esta es la configuracion **original** y es la que usa `docker-compose.prod.yml`
+por si solo: sirve para desplegar en cualquier servidor limpio.
 
-### Acceso tras traefik (produccion real)
-
-BikerZone **no** publica los puertos 80/443: el frontal es el `traefik` del
-homelab (el dueño del `0.0.0.0:80`). Tres piezas, todas necesarias:
-
-**1. `docker-compose.prod.yml`** — nginx publica 8088 y se conecta a la red
-externa del homelab con el alias `bikerzone`:
-
-```yaml
-  nginx:
-    ports:
-      - "8088:80"
-    networks:
-      default:            # red propia del proyecto (nginx -> web:8000)
-      web:
-        aliases:
-          - bikerzone      # nombre con el que traefik lo resuelve
-
-networks:
-  default:
-  web:
-    external: true
-    name: web_network      # nombre real de la red del homelab
-```
-
-**2. `docker_homelab/configs/traefik/dynamic/bikerzone.yml`** — traefik usa
-**file provider** (no labels), asi que el router va en este archivo:
-
-```yaml
-http:
-  routers:
-    bikerzone:
-      rule: "Host(`bikerzone.runemal.cloud`) || Host(`bikerzone.localhost`)"
-      service: bikerzone
-      entryPoints:
-        - web
-
-  services:
-    bikerzone:
-      loadBalancer:
-        servers:
-          - url: "http://bikerzone:80"
-```
-
-- **Interno:** `bikerzone.localhost` (y `http://127.0.0.1:8088` directo).
-- **Externo:** `bikerzone.runemal.cloud`.
-
-El file provider tiene `watch: true`, asi que **no** hay que reiniciar traefik.
-
-**3. DNS en Cloudflare** — el registro `bikerzone.runemal.cloud` debe existir
-(igual que `portainer.runemal.cloud` / `navidrome.runemal.cloud`): A/AAAA
-proxied apuntando al origen, o CNAME al tunnel. Sin este registro solo funciona
-el acceso interno.
-
-**Verificacion**
-
-```bash
-curl -s http://127.0.0.1:8000/health                # {"status":"ok",...}
-curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:8088/login   # 200
-curl -s -o /dev/null -w '%{http_code}\n' -H 'Host: bikerzone.localhost' http://127.0.0.1/   # 200 (con -L)
-curl -s http://127.0.0.1:8080/api/http/routers | python3 -m json.tool  # bikerzone@file enabled
-```
+> Si el servidor ya tiene otro proxy dueño del puerto 80 (traefik,
+> nginx-proxy-manager, apache...), **no edites** `docker-compose.prod.yml`:
+> usa la variante de la seccion **10. Variante con traefik (opcional)**, al
+> final de esta guia. En ese servidor los puertos propios pasan a ser
+> `8088` (nginx), `8000` (web) y `5434` (db).
 
 ### 1. Preparar el servidor
 
@@ -289,26 +229,24 @@ TELEGRAM_BOT_TOKEN=<token-de-BotFather>
 
 #### 4.0 Verificar puertos libres (obligatorio)
 
-BikerZone **no** usa el 80 ni el 443 en este servidor: los ocupa `traefik`
-(80/8080) y `nginx-proxy-manager` (8443). El stack publica `8088` (nginx),
-`8000` (web) y `5434` (db). Antes de levantar, confirma que sigan libres:
+La configuracion original necesita `80`, `443`, `8000` y `5432`. Antes de
+levantar, confirma que esten libres:
 
 ```bash
 # Puertos que BikerZone necesita
-ss -ltn | grep -E ':(8088|8000|5434)[[:space:]]' || echo "puertos de bikerzone libres"
+ss -ltn | grep -E ':(80|443|8000|5432)[[:space:]]' || echo "puertos libres"
 
-# Alguien mas usandolos (contenedores)
-docker ps --filter publish=8088 --filter publish=8000 --filter publish=5434 --format 'table {{.Names}}\t{{.Ports}}'
-
-# Si vas a usar la Opcion A (Bikerzone en el 80), revisa quien lo tiene
-docker ps --filter publish=80 --filter publish=443 --format 'table {{.Names}}\t{{.Ports}}'
+# Que contenedores los estan usando
+docker ps --filter publish=80 --filter publish=443 \
+  --filter publish=8000 --filter publish=5432 --format 'table {{.Names}}\t{{.Ports}}'
 ```
 
-Si otro servicio (traefik, nginx-proxy-manager, apache2, nginx del homelab,
-etc.) ocupa el puerto que quieres usar, aplica **una** de las soluciones de la
-seccion **Problemas conocidos** (mas abajo) antes de continuar. Si aparece un
-contenedor `bikerzone-nginx-1` o `bikerzone-db-1` en estado `Created` (intento
-fallido), limpialo:
+- **Todo libre** → continua con `4.1` (configuracion original).
+- **Alguien ocupa el 80/443** (traefik, nginx-proxy-manager, apache2, nginx del
+  homelab...) → **no fuerces** el puerto: usa la variante de la seccion **10**
+  con `docker-compose.traefik.yml`.
+- Si aparece un contenedor `bikerzone-nginx-1` o `bikerzone-db-1` en estado
+  `Created` (intento fallido), limpialo:
 
 ```bash
 docker compose -f docker-compose.prod.yml down
@@ -328,11 +266,6 @@ docker compose -f docker-compose.prod.yml exec web python -m alembic upgrade hea
 # Verificar salud
 curl -s http://127.0.0.1:8000/health
 # {"status":"ok","version":"2.0.0"}
-
-# Verificar que traefik tiene el router y que responde por el 8088
-curl -s http://127.0.0.1:8080/api/http/routers | python3 -m json.tool | grep -A2 bikerzone
-curl -s -L -o /dev/null -w '%{http_code}\n' -H 'Host: bikerzone.localhost' http://127.0.0.1/
-# 200
 ```
 
 O usa el script:
@@ -392,19 +325,7 @@ Los correos de los clientes demo son ficticios (`*@email.com`) y no tienen
 una orden se intentara enviar un email real. Para una presentacion, desactivalo
 en **Configuracion** si no quieres que se dispare.
 
-### 5. HTTPS
-
-**Opcion recomendada (la de este servidor): TLS en Cloudflare**
-
-El registro `bikerzone.runemal.cloud` queda *proxied* en Cloudflare, que
-termina el TLS y reenvia a origen por el puerto 80 (traefik). No hay nada que
-instalar en el servidor: nginx interno solo escucha en 80 y el 8443 ya lo usa
-nginx-proxy-manager.
-
-**Opcion alternativa: certbot + nginx interno**
-
-Solo aplica si no pasas por Cloudflare. Reserva un puerto libre para 443
-(**8443 esta ocupado** por nginx-proxy-manager; usa, por ejemplo, `8445:443`):
+### 5. HTTPS con certbot
 
 ```bash
 # Certificado wildcard o por dominio
@@ -417,12 +338,14 @@ sudo cp /etc/letsencrypt/live/taller.ejemplo.com/fullchain.pem nginx/ssl/
 sudo cp /etc/letsencrypt/live/taller.ejemplo.com/privkey.pem nginx/ssl/
 ```
 
-Publica el puerto 443 en `docker-compose.prod.yml` (`"8445:443"`), agrega un
-bloque `server` de `:443` en `nginx/default.conf` (o usa un archivo aparte) y reinicia:
+Agrega un bloque `server` de `:443` en `nginx/default.conf` (o usa un archivo aparte) y reinicia:
 
 ```bash
 docker compose -f docker-compose.prod.yml restart nginx
 ```
+
+> En la **variante con traefik** (seccion 10) el 443 lo maneja el proxy frontal
+> o Cloudflare, y este paso no aplica.
 
 ### 6. Verificar notificaciones
 
@@ -475,6 +398,9 @@ COMPOSE_FILE=docker-compose.prod.yml ./scripts/backup.sh
 ./scripts/backup.sh --force
 ```
 
+> Los backups/restauraciones usan `docker compose exec db`, asi que sirven tal
+> cual con la variante traefik: no hacen falta mas `-f`.
+
 #### Nombre del backup (fecha y hora)
 
 ```
@@ -518,6 +444,10 @@ docker compose -f docker-compose.prod.yml up -d --build
 docker compose -f docker-compose.prod.yml exec web python -m alembic upgrade head
 ```
 
+> Si despliegas con la **variante traefik**, agrega el segundo `-f` en todos los
+> comandos:
+> `docker compose -f docker-compose.prod.yml -f docker-compose.traefik.yml up -d --build`
+
 ### 9. Problemas conocidos
 
 #### Problema: `Bind for 0.0.0.0:80 failed: port is already allocated`
@@ -548,7 +478,7 @@ docker ps -a --filter name=bikerzone   # busca contenedores en Created/Exited
 | # | Cuando aplicarla | Accion |
 |---|------------------|--------|
 | A | BikerZone debe ser el sitio principal del puerto 80 | Mover el servicio que lo ocupa a otro puerto |
-| B | Ya existe un proxy frontal y BikerZone va detras | Publicar nginx de BikerZone en puertos libres |
+| B | Ya existe un proxy frontal y BikerZone va detras | Usar `docker-compose.traefik.yml` (variante, seccion 10) |
 | C | Quieres reusar traefik / nginx-proxy-manager ya desplegados | No publicar puertos; que el proxy apunte a `web:8000` |
 
 **Opcion A: liberar el puerto 80**
@@ -562,23 +492,40 @@ docker compose -p <proyecto-conflictivo> up -d
 docker ps --filter publish=80 --format 'table {{.Names}}\t{{.Ports}}'
 ```
 
-**Opcion B (la aplicada aqui): publicar BikerZone en otros puertos**
+**Opcion B (la de este servidor): variante `docker-compose.traefik.yml`**
 
-`docker-compose.prod.yml` ya viene asi:
+No se toca `docker-compose.prod.yml`; el override sobreescribe solo lo
+necesario:
 
 ```yaml
+services:
+  db:
+    ports: !override
+      - "127.0.0.1:5434:5432"    # 5432 lo usa el postgres del homelab
+
   nginx:
-    image: nginx:alpine
-    ports:
-      - "8088:80"     # en vez de "80:80"
-      # sin 443:8443 esta ocupado por nginx-proxy-manager y el nginx
-      # interno no tiene todavia server block 443 (el TLS lo hace Cloudflare)
+    ports: !override
+      - "8088:80"                # 80 y 443 quedan para traefik
+    networks: !override
+      default:
+      web:
+        aliases:
+          - bikerzone            # traefik resuelve http://bikerzone:80
+
+networks:
+  web:
+    external: true
+    name: web_network
 ```
 
-Y el `db` publica `127.0.0.1:5434:5432` (no `5432`: ese lo tiene el
-`postgres` del homelab). Acceso directo: `http://<servidor>:8088`.
-Para entrar por el dominio, sigue la seccion
-**Acceso tras traefik (produccion real)** de arriba.
+Se levanta con los dos archivos:
+
+```bash
+docker compose -f docker-compose.prod.yml -f docker-compose.traefik.yml up -d --build
+```
+
+`8443` se dejo fuera a proposito: lo usa nginx-proxy-manager. Detalle completo
+en la **seccion 10. Variante con traefik**.
 
 **Opcion C: entrar por el proxy existente**
 
@@ -634,21 +581,121 @@ docker compose -f docker-compose.prod.yml logs --tail=5 web
 Si preferis arrancar de cero (borra **todos** los datos): `docker compose -f
 docker-compose.prod.yml down -v && docker compose -f docker-compose.prod.yml up -d --build`.
 
+### 10. Variante con traefik (opcional)
+
+Solo para servidores donde **ya existe** un proxy (traefik, nginx-proxy-manager)
+dueño del puerto 80: es el caso de mi servidor personal / homelab, no de un
+deploy de produccion limpio. La configuracion original (`docker-compose.prod.yml`
+con 80/443 y 5432) **no se modifica**: se agrega un override.
+
+#### 10.1 `docker-compose.traefik.yml`
+
+```yaml
+services:
+  db:
+    ports: !override
+      - "127.0.0.1:5434:5432"
+
+  nginx:
+    ports: !override
+      - "8088:80"
+    networks: !override
+      default:
+      web:
+        aliases:
+          - bikerzone
+
+networks:
+  default:
+  web:
+    external: true
+    name: web_network
+```
+
+- `!override` **reemplaza** la lista de puertos en vez de sumarla (si no,
+  quedarian `80:80` y `8088:80` juntos y volviera el error de puertos).
+- El alias `bikerzone` sobre la red externa `web_network` es lo que permite que
+  traefik resuelva `http://bikerzone:80`.
+
+#### 10.2 Desplegar con la variante
+
+```bash
+docker compose -f docker-compose.prod.yml -f docker-compose.traefik.yml up -d --build
+docker compose -f docker-compose.prod.yml -f docker-compose.traefik.yml ps
+
+# Migraciones y salud (mismos comandos que la seccion 4.1)
+docker compose -f docker-compose.prod.yml -f docker-compose.traefik.yml exec web python -m alembic upgrade head
+curl -s http://127.0.0.1:8000/health
+```
+
+Puertos propios de esta variante: `8088` (nginx), `8000` (web), `5434` (db).
+
+#### 10.3 Router en traefik
+
+traefik del homelab usa **file provider** (no labels) y tiene `watch: true`,
+asi que basta con crear el archivo (no hay que reiniciar traefik):
+
+`docker_homelab/configs/traefik/dynamic/bikerzone.yml`
+
+```yaml
+http:
+  routers:
+    bikerzone:
+      rule: "Host(`bikerzone.runemal.cloud`) || Host(`bikerzone.localhost`)"
+      service: bikerzone
+      entryPoints:
+        - web
+
+  services:
+    bikerzone:
+      loadBalancer:
+        servers:
+          - url: "http://bikerzone:80"
+```
+
+- **Interno:** `bikerzone.localhost` (y `http://127.0.0.1:8088` directo).
+- **Externo:** `bikerzone.runemal.cloud` (registro DNS en Cloudflare, igual que
+  `portainer.runemal.cloud` / `navidrome.runemal.cloud`; sin el registro solo
+  funciona el acceso interno).
+
+#### 10.4 Puertos ya ocupados en ese servidor
+
+No reutilizar: `80`, `8080` (traefik), `81`, `8084`, `8443`
+(nginx-proxy-manager), `8081` (nginx), `8082` (wordpress), `8083` (pihole),
+`8085` (qbittorrent), `8086` (cadvisor), `5432` (postgres del homelab),
+`8087` (nginx del stack de desarrollo), `9000` (portainer).
+
+#### 10.5 Verificacion
+
+```bash
+curl -s http://127.0.0.1:8000/health                              # {"status":"ok",...}
+curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:8088/login   # 200
+curl -s -L -o /dev/null -w '%{http_code}\n' -H 'Host: bikerzone.localhost' http://127.0.0.1/   # 200
+curl -s http://127.0.0.1:8080/api/http/routers | python3 -m json.tool   # bikerzone@file enabled
+```
+
 ### Checklist de produccion
 
-- [ ] Puertos `8088`, `8000` y `5434` libres antes del `up -d --build`
-- [ ] Ningun servicio ajeno pisa el `80`/`8080`/`8443` (traefik y NPM)
-- [ ] `bikerzone.yml` en `configs/traefik/dynamic/` del homelab (router traefik)
-- [ ] Red externa `web_network` disponible y alias `bikerzone` en nginx
-- [ ] Registro DNS `bikerzone.runemal.cloud` creado en Cloudflare
+- [ ] Puertos `80`, `443`, `8000` y `5432` libres antes del `up -d --build`
 - [ ] `SECRET_KEY` generado (no el valor por defecto)
-- [ ] `ADMIN_PASSWORD` fuerte y distinto de `admin123`
+- [ ] `ADMIN_PASSWORD` fuerte y distinto de `admin123` (si esta vacio, el admin
+      se crea sin contrasena)
 - [ ] `DB_PASSWORD` unica y **coincide** con el rol de la BD existente
 - [ ] `.env` con permisos `600` y **no** en git
 - [ ] `ENVIRONMENT=production` (desactiva `/docs`)
 - [ ] SMTP configurado y probado (o desactivado a proposito)
+- [ ] Certificado TLS activo en nginx (seccion 5)
 - [ ] Backup programado y probado (cron con `scripts/backup.sh`, exit 0)
-- [ ] Puerto `5434` y `8000` **no** expuestos a Internet (solo `127.0.0.1`)
+- [ ] `5432` y `8000` **no** expuestos a Internet (solo `127.0.0.1`)
+
+Solo si usas la **variante traefik** (seccion 10):
+
+- [ ] Despliegue con `-f docker-compose.prod.yml -f docker-compose.traefik.yml`
+- [ ] Puertos `8088`, `8000` y `5434` libres (80/443 los usa traefik)
+- [ ] Red externa `web_network` disponible y alias `bikerzone` en nginx
+- [ ] `bikerzone.yml` en `configs/traefik/dynamic/` del homelab (router)
+- [ ] Registro DNS `bikerzone.runemal.cloud` creado en Cloudflare
+
 
 ---
 
