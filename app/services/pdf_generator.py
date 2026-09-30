@@ -1,3 +1,5 @@
+from html import escape
+
 from reportlab.lib.pagesizes import letter
 from reportlab.lib import colors
 from reportlab.lib.units import inch
@@ -5,6 +7,7 @@ from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, 
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 
 from app.config import settings
+from app.schemas.orden_servicio import decodificar_falla_reportada
 
 
 def generar_pdf_orden(datos, output_path, currency_symbol=None):
@@ -77,9 +80,22 @@ def generar_pdf_orden(datos, output_path, currency_symbol=None):
 
     # Detalles de la reparacion
     story.append(Paragraph("<b>Detalles de la Reparacion</b>", section_style))
-    story.append(Paragraph(f"<b>Falla:</b> {datos['falla_reportada']}", normal_style))
+
+    falla_decodificada = decodificar_falla_reportada(datos['falla_reportada'])
+    if falla_decodificada['servicio_labels']:
+        servicios = escape(" + ".join(falla_decodificada['servicio_labels']))
+        story.append(Paragraph(f"<b>Servicios:</b> {servicios}", normal_style))
+
+    texto_falla = ", ".join(falla_decodificada['fallas'])
+    if falla_decodificada['descripcion']:
+        texto_falla = f"{texto_falla} {falla_decodificada['descripcion']}".strip()
+    if not texto_falla:
+        texto_falla = datos['falla_reportada'] or ''
+    if texto_falla:
+        story.append(Paragraph(f"<b>Falla:</b> {escape(texto_falla)}", normal_style))
+
     if datos['diagnostico']:
-        story.append(Paragraph(f"<b>Diagnostico:</b> {datos['diagnostico']}", normal_style))
+        story.append(Paragraph(f"<b>Diagnostico:</b> {escape(datos['diagnostico'])}", normal_style))
 
     # Repuestos
     if datos['repuestos']:

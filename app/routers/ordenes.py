@@ -4,9 +4,12 @@ from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from sqlalchemy.orm import Session
 import os
 import tempfile
+import urllib.parse
 
 from app.database import get_db
 from app.models.usuario import Usuario
+from app.models.cliente import Cliente
+from app.models.moto import Moto
 from app.routers.auth import get_current_user
 from app.schemas.orden_servicio import (
     OrdenServicioCreate,
@@ -77,6 +80,7 @@ async def nueva_orden_form(
     request: Request,
     client_id: int = Query(None),
     moto_id: int = Query(None),
+    error: str = Query(""),
     db: Session = Depends(get_db),
     user: Usuario = Depends(get_current_user),
 ):
@@ -96,6 +100,7 @@ async def nueva_orden_form(
             "client_id": client_id,
             "moto_id": moto_id,
             "catalogo_servicios": SERVICIOS_CATALOGO,
+            "error": error,
         },
     )
 
@@ -103,8 +108,8 @@ async def nueva_orden_form(
 @router.post("/nueva")
 async def crear_orden(
     request: Request,
-    client_id: int = Form(...),
-    motorcycle_id: int = Form(...),
+    client_id: str = Form(""),
+    motorcycle_id: str = Form(""),
     technician_id: str = Form(""),
     servicio_tipo: str = Form(""),
     fallas_seleccionadas: List[str] = Form([]),
@@ -113,15 +118,49 @@ async def crear_orden(
     db: Session = Depends(get_db),
     user: Usuario = Depends(get_current_user),
 ):
+    def con_error(mensaje: str, cliente_id: int = None, moto_id: int = None) -> RedirectResponse:
+        params = [f"error={urllib.parse.quote(mensaje)}"]
+        if cliente_id:
+            params.append(f"client_id={cliente_id}")
+        if moto_id:
+            params.append(f"moto_id={moto_id}")
+        return RedirectResponse(url=f"/ordenes/nueva?{'&'.join(params)}", status_code=303)
+
+    if not client_id.strip().isdigit() or not motorcycle_id.strip().isdigit():
+        return con_error("Selecciona un cliente y una moto para crear la orden")
+
+    cliente_id = int(client_id.strip())
+    moto_id = int(motorcycle_id.strip())
+
+    if not db.query(Cliente).filter(Cliente.id == cliente_id).first():
+        return con_error("El cliente seleccionado no existe", cliente_id, moto_id)
+
+    moto = db.query(Moto).filter(Moto.id == moto_id).first()
+    if not moto:
+        return con_error("La moto seleccionada no existe", cliente_id, moto_id)
+    if moto.client_id != cliente_id:
+        return con_error("La moto seleccionada no pertenece al cliente elegido", cliente_id, moto_id)
+
+    tecnico_id = None
+    if technician_id.strip():
+        if not technician_id.strip().isdigit() or not db.query(Usuario).filter(
+            Usuario.id == int(technician_id.strip())
+        ).first():
+            return con_error("El tecnico seleccionado no existe", cliente_id, moto_id)
+        tecnico_id = int(technician_id.strip())
+
     falla_completa = codificar_falla_reportada(servicio_tipo, fallas_seleccionadas, falla_reportada)
     data = OrdenServicioCreate(
-        client_id=client_id,
-        motorcycle_id=motorcycle_id,
-        technician_id=int(technician_id) if technician_id and technician_id.strip().isdigit() else None,
+        client_id=cliente_id,
+        motorcycle_id=moto_id,
+        technician_id=tecnico_id,
         falla_reportada=falla_completa,
         kilometraje_entrada=int(kilometraje_entrada) if kilometraje_entrada and kilometraje_entrada.strip().isdigit() else None,
     )
-    orden = orden_service.create_orden(db, data, user.id)
+    try:
+        orden = orden_service.create_orden(db, data, user.id)
+    except orden_service.OrdenError as exc:
+        return con_error(str(exc), cliente_id, moto_id)
     return RedirectResponse(url=f"/ordenes/{orden.codigo}", status_code=303)
 
 

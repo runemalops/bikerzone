@@ -28,7 +28,7 @@
             <div class="form-row">
                 <div class="form-group">
                     <label for="client_id">Cliente *</label>
-                    <select id="client_id" name="client_id" required onchange="cargarMotos(this.value)">
+                    <select id="client_id" name="client_id" required>
                         <option value="">Seleccionar cliente...</option>
                         {% for c in clientes %}
                         <option value="{{ c.id }}" {% if (orden and orden.client_id == c.id) or (client_id == c.id) %}selected{% endif %}>
@@ -74,10 +74,10 @@
             <!-- === SECCION: Tipo de Servicio === -->
             <div class="service-type-section">
                 <label class="form-group-label">Tipo de Servicio</label>
-                <p class="form-group-hint">Selecciona la categoria que mejor describe el servicio o falla</p>
+                <p class="form-group-hint">Puedes seleccionar uno o varios tipos de servicio; luego marca las fallas correspondientes</p>
                 <div class="service-type-grid" id="service-type-grid">
                     {% for key, cat in catalogo_servicios.items() %}
-                    <button type="button" class="service-type-card" data-tipo="{{ key }}" data-color="{{ cat.color }}" style="--card-color: {{ cat.color }};">
+                    <button type="button" class="service-type-card" data-tipo="{{ key }}" data-color="{{ cat.color }}" aria-pressed="false" style="--card-color: {{ cat.color }};">
                         <span class="service-type-icon" style="background: {{ cat.color }}12; color: {{ cat.color }};">
                             {% if cat.icon == 'wrench' %}
                             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
@@ -154,89 +154,93 @@
 <script>
 var catalogoServicios = {{ catalogo_servicios | tojson }};
 
-// Pre-selected state (for edit form or if category was already chosen)
-var servicioTipoActual = '';
+// Estado de seleccion: uno o varios tipos de servicio (una moto puede entrar por mas de uno)
+var servicioTiposActual = [];
 var fallasSeleccionadas = [];
 
-function seleccionarTipo(tipo) {
-    servicioTipoActual = tipo;
-    document.getElementById('servicio_tipo').value = tipo;
-
-    // Update UI
-    document.querySelectorAll('.service-type-card').forEach(function(card) {
-        card.classList.toggle('selected', card.dataset.tipo === tipo);
-    });
-
-    // Render failure checklist
-    renderFallas(tipo);
+function alternarTipo(tipo) {
+    if (!catalogoServicios[tipo]) return;
+    var posicion = servicioTiposActual.indexOf(tipo);
+    if (posicion === -1) {
+        servicioTiposActual.push(tipo);
+    } else {
+        servicioTiposActual.splice(posicion, 1);
+    }
+    document.getElementById('servicio_tipo').value = servicioTiposActual.join(',');
+    refrescarTarjetas();
+    renderFallas();
 }
 
-function renderFallas(tipo) {
+function refrescarTarjetas() {
+    document.querySelectorAll('.service-type-card').forEach(function(card) {
+        var activo = servicioTiposActual.indexOf(card.dataset.tipo) !== -1;
+        card.classList.toggle('selected', activo);
+        card.setAttribute('aria-pressed', activo ? 'true' : 'false');
+    });
+}
+
+function renderFallas() {
     var section = document.getElementById('failure-section');
     var container = document.getElementById('failure-categories');
 
-    if (!tipo || !catalogoServicios[tipo]) {
+    if (servicioTiposActual.length === 0) {
         section.style.display = 'none';
         container.innerHTML = '';
         return;
     }
 
     section.style.display = 'block';
-    var cat = catalogoServicios[tipo];
-    var html = '<div class="failure-group">';
-    html += '<div class="failure-group-header" style="border-left-color: ' + cat.color + ';">';
-    html += '<span class="failure-group-title">' + cat.label + '</span>';
-    html += '<span class="failure-group-count" id="failure-count">0 seleccionadas</span>';
-    html += '</div>';
-    html += '<div class="failure-options">';
-
-    cat.fallas.forEach(function(falla) {
-        var checked = fallasSeleccionadas.indexOf(falla) !== -1;
-        html += '<label class="failure-checkbox">';
-        html += '<input type="checkbox" name="fallas_seleccionadas" value="' + falla + '"' + (checked ? ' checked' : '') + '>';
-        html += '<span class="failure-checkmark"></span>';
-        html += '<span class="failure-text">' + falla + '</span>';
-        html += '</label>';
+    var html = '';
+    servicioTiposActual.forEach(function(tipo) {
+        var cat = catalogoServicios[tipo];
+        if (!cat) return;
+        html += '<div class="failure-group">';
+        html += '<div class="failure-group-header" style="border-left-color: ' + cat.color + ';">';
+        html += '<span class="failure-group-title">' + cat.label + '</span>';
+        html += '<span class="failure-group-count" data-count-for="' + tipo + '">0 seleccionadas</span>';
+        html += '</div>';
+        html += '<div class="failure-options">';
+        cat.fallas.forEach(function(falla) {
+            var checked = fallasSeleccionadas.indexOf(falla) !== -1;
+            html += '<label class="failure-checkbox">';
+            html += '<input type="checkbox" name="fallas_seleccionadas" value="' + falla + '"' + (checked ? ' checked' : '') + '>';
+            html += '<span class="failure-checkmark"></span>';
+            html += '<span class="failure-text">' + falla + '</span>';
+            html += '</label>';
+        });
+        html += '</div></div>';
     });
-
-    html += '</div></div>';
     container.innerHTML = html;
 
-    // Attach listeners
     container.querySelectorAll('input[type="checkbox"]').forEach(function(cb) {
-        cb.addEventListener('change', function() {
-            fallasSeleccionadas = [];
-            container.querySelectorAll('input[type="checkbox"]:checked').forEach(function(c) {
-                fallasSeleccionadas.push(c.value);
-            });
-            var count = document.getElementById('failure-count');
-            if (count) count.textContent = fallasSeleccionadas.length + ' seleccionadas';
-        });
+        cb.addEventListener('change', sincronizarFallas);
     });
-
-    updateFailureCount();
+    sincronizarFallas();
 }
 
-function updateFailureCount() {
-    var count = document.getElementById('failure-count');
-    if (count) count.textContent = fallasSeleccionadas.length + ' seleccionadas';
+function sincronizarFallas() {
+    fallasSeleccionadas = [];
+    document.querySelectorAll('#failure-categories input[type="checkbox"]:checked').forEach(function(c) {
+        fallasSeleccionadas.push(c.value);
+    });
+    document.querySelectorAll('#failure-categories [data-count-for]').forEach(function(span) {
+        var cat = catalogoServicios[span.dataset.countFor];
+        var total = 0;
+        if (cat) {
+            cat.fallas.forEach(function(falla) {
+                if (fallasSeleccionadas.indexOf(falla) !== -1) total++;
+            });
+        }
+        span.textContent = total + ' seleccionadas';
+    });
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-    // Service type card clicks
+    // Service type card clicks (multi-seleccion)
     document.querySelectorAll('.service-type-card').forEach(function(card) {
         card.addEventListener('click', function(e) {
             e.preventDefault();
-            var tipo = this.dataset.tipo;
-            if (servicioTipoActual === tipo) {
-                // Deselect
-                servicioTipoActual = '';
-                document.getElementById('servicio_tipo').value = '';
-                this.classList.remove('selected');
-                renderFallas('');
-            } else {
-                seleccionarTipo(tipo);
-            }
+            alternarTipo(this.dataset.tipo);
         });
     });
 
@@ -258,7 +262,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Moto autocomplete with async loading
     var motoAc = BZAutocomplete.init('#motorcycle_id', {
-        placeholder: 'Seleccionar moto...'
+        placeholder: 'Seleccionar moto...',
+        async: '/ordenes/api/motos/{client_id}'
     });
 
     // Tecnico autocomplete
@@ -266,10 +271,10 @@ document.addEventListener('DOMContentLoaded', function() {
         placeholder: 'Buscar tecnico por nombre...'
     });
 
-    // If a client is pre-selected (edit form), load their motos
+    // If a client is pre-selected (edit form), load their motos keeping the selected moto
     var clientSelect = document.querySelector('[name="client_id"]');
-    if (clientSelect && clientSelect.value) {
-        if (motoAc) motoAc.loadAsync(clientSelect.value);
+    if (clientSelect && clientSelect.value && motoAc) {
+        motoAc.loadAsync(clientSelect.value, motoAc.hidden.value);
     }
 
     // Auto-resize textarea

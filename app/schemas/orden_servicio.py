@@ -274,29 +274,59 @@ SERVICIOS_CATALOGO = {
 }
 
 
-def codificar_falla_reportada(servicio_tipo: str, fallas_seleccionadas: list, descripcion_libre: str) -> str:
-    """Codifica el tipo de servicio y fallas seleccionadas en el campo falla_reportada.
-    Formato: [CATEGORIA: Falla1, Falla2] descripcion libre"""
+def normalizar_tipos_servicio(servicio_tipo) -> list:
+    """Acepta 'frenos,motor', ['frenos', 'motor'] o '' y devuelve las claves validas
+    del catalogo, sin duplicados y en el orden recibido."""
+    if isinstance(servicio_tipo, str):
+        candidatos = servicio_tipo.split(",")
+    elif isinstance(servicio_tipo, (list, tuple, set)):
+        candidatos = list(servicio_tipo)
+    else:
+        candidatos = []
+
+    tipos = []
+    for item in candidatos:
+        clave = str(item or "").strip()
+        if clave in SERVICIOS_CATALOGO and clave not in tipos:
+            tipos.append(clave)
+    return tipos
+
+
+def codificar_falla_reportada(servicio_tipo, fallas_seleccionadas: list, descripcion_libre: str) -> str:
+    """Codifica uno o varios tipos de servicio y las fallas seleccionadas en el campo
+    falla_reportada.
+    Formato: [Tipo1 + Tipo2: Falla1, Falla2] descripcion libre"""
+    etiquetas = [SERVICIOS_CATALOGO[clave]["label"] for clave in normalizar_tipos_servicio(servicio_tipo)]
     partes = []
-    if servicio_tipo and servicio_tipo in SERVICIOS_CATALOGO:
-        label = SERVICIOS_CATALOGO[servicio_tipo]["label"]
-        if fallas_seleccionadas:
-            partes.append(f"[{label}: {', '.join(fallas_seleccionadas)}]")
+    if etiquetas:
+        base = " + ".join(etiquetas)
+        fallas = [str(f).strip() for f in (fallas_seleccionadas or []) if str(f).strip()]
+        if fallas:
+            partes.append(f"[{base}: {', '.join(fallas)}]")
         else:
-            partes.append(f"[{label}]")
+            partes.append(f"[{base}]")
     if descripcion_libre:
         partes.append(descripcion_libre)
     return " ".join(partes) if partes else ""
 
 
 def decodificar_falla_reportada(falla_texto: str) -> dict:
-    """Decodifica el campo falla_reportada para extraer categoria y fallas.
-    Returns: { 'servicio_tipo': key, 'servicio_label': label, 'fallas': [...], 'descripcion': str }"""
+    """Decodifica el campo falla_reportada para extraer tipos de servicio y fallas.
+
+    Returns:
+        servicio_tipos: claves del catalogo, una por tipo seleccionado
+        servicio_labels: etiquetas tal como se guardaron
+        servicio_tipo / servicio_label: primer tipo (compatibilidad con formatos anteriores)
+        fallas: fallas seleccionadas
+        descripcion: texto libre
+    """
     import re
 
     resultado = {
         "servicio_tipo": "",
         "servicio_label": "",
+        "servicio_tipos": [],
+        "servicio_labels": [],
         "fallas": [],
         "descripcion": falla_texto or "",
     }
@@ -311,23 +341,23 @@ def decodificar_falla_reportada(falla_texto: str) -> dict:
     contenido_parentesis = match.group(1).strip()
     resultado["descripcion"] = match.group(2).strip()
 
-    # Buscar la categoria en el catalogo
-    for key, cat in SERVICIOS_CATALOGO.items():
-        if cat["label"] == contenido_parentesis:
-            resultado["servicio_tipo"] = key
-            resultado["servicio_label"] = cat["label"]
-            return resultado
-
-    # Si no matcheo exacto, intentar extraer fallas separadas por coma
+    etiquetas_part = contenido_parentesis
     if ": " in contenido_parentesis:
-        label_part, fallas_part = contenido_parentesis.split(": ", 1)
-        resultado["servicio_label"] = label_part
+        etiquetas_part, fallas_part = contenido_parentesis.split(": ", 1)
         resultado["fallas"] = [f.strip() for f in fallas_part.split(", ") if f.strip()]
+
+    for etiqueta in [e.strip() for e in etiquetas_part.split(" + ") if e.strip()]:
+        if etiqueta in resultado["servicio_labels"]:
+            continue
+        resultado["servicio_labels"].append(etiqueta)
         for key, cat in SERVICIOS_CATALOGO.items():
-            if cat["label"] == label_part:
-                resultado["servicio_tipo"] = key
+            if cat["label"] == etiqueta:
+                resultado["servicio_tipos"].append(key)
                 break
-    else:
-        resultado["servicio_label"] = contenido_parentesis
+
+    if resultado["servicio_tipos"]:
+        resultado["servicio_tipo"] = resultado["servicio_tipos"][0]
+    if resultado["servicio_labels"]:
+        resultado["servicio_label"] = resultado["servicio_labels"][0]
 
     return resultado

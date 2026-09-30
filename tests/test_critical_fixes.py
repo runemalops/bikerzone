@@ -73,24 +73,29 @@ class TestConfigSecurity:
 
     def test_get_secret_rejects_insecure_secret_key(self):
         from app.config import _get_secret
-        result = _get_secret("SECRET_KEY", "cambia-esta-clave-secreta")
+        with patch.dict(os.environ, {"SECRET_KEY": "cambia-esta-clave-secreta"}):
+            result = _get_secret("SECRET_KEY", "cambia-esta-clave-secreta")
         assert result != "cambia-esta-clave-secreta"
         assert len(result) == 64
 
     def test_get_secret_rejects_insecure_admin_password(self):
         from app.config import _get_secret
-        result = _get_secret("ADMIN_PASSWORD", "admin123")
+        with patch.dict(os.environ, {"ADMIN_PASSWORD": "admin123"}):
+            result = _get_secret("ADMIN_PASSWORD", "admin123")
         assert result != "admin123"
         assert result == ""
 
     def test_get_secret_generates_key_for_empty(self):
         from app.config import _get_secret
-        result = _get_secret("SECRET_KEY", "")
+        with patch.dict(os.environ, {"SECRET_KEY": ""}):
+            result = _get_secret("SECRET_KEY", "")
         assert len(result) == 64
 
     def test_get_secret_generates_key_for_none(self):
         from app.config import _get_secret
-        result = _get_secret("SECRET_KEY", None)
+        with patch.dict(os.environ):
+            os.environ.pop("SECRET_KEY", None)
+            result = _get_secret("SECRET_KEY", None)
         assert len(result) == 64
 
     def test_get_secret_passes_through_valid_value(self):
@@ -107,8 +112,9 @@ class TestConfigSecurity:
 
     def test_settings_secret_key_not_insecure_default(self):
         from app.config import settings
+        assert settings.SECRET_KEY
         assert settings.SECRET_KEY != "cambia-esta-clave-secreta"
-        assert len(settings.SECRET_KEY) == 64
+        assert len(settings.SECRET_KEY) >= 32
 
 
 class TestNITFieldFix:

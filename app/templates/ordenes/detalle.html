@@ -117,11 +117,14 @@
                 <div class="falla-section">
                     <span class="section-label">Falla Reportada</span>
 
-                    {% if falla_decodificada.servicio_tipo %}
+                    {% if falla_decodificada.servicio_tipos %}
                     <div class="service-type-display">
-                        <span class="service-type-tag" style="background: {{ catalogo_servicios[falla_decodificada.servicio_tipo].color }}15; color: {{ catalogo_servicios[falla_decodificada.servicio_tipo].color }}; border-color: {{ catalogo_servicios[falla_decodificada.servicio_tipo].color }}30;">
-                            {{ catalogo_servicios[falla_decodificada.servicio_tipo].label }}
+                        {% for tipo in falla_decodificada.servicio_tipos %}
+                        {% set cat = catalogo_servicios[tipo] %}
+                        <span class="service-type-tag" style="background: {{ cat.color }}15; color: {{ cat.color }}; border-color: {{ cat.color }}30;">
+                            {{ cat.label }}
                         </span>
+                        {% endfor %}
                     </div>
                     {% endif %}
 

@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime
 from typing import Optional, List, Tuple
 from sqlalchemy.orm import Session
@@ -17,6 +18,22 @@ from app.schemas.orden_servicio import (
     FLUJO_ESTADOS,
     ESTADO_LABELS,
 )
+
+logger = logging.getLogger(__name__)
+
+
+class OrdenError(ValueError):
+    """Error de negocio al crear una orden; el mensaje es apto para mostrarse al usuario.
+
+    Hereda de ValueError para seguir siendo compatible con los manejadores existentes
+    de ValueError en los routers.
+    """
+
+
+def es_conflicto_codigo(error: sa_exc.IntegrityError) -> bool:
+    """True si el IntegrityError viene de la unicidad de `codigo` (reintentable)."""
+    texto = str(getattr(error, "orig", error)).lower()
+    return "codigo" in texto and ("unique" in texto or "duplicate" in texto)
 
 
 def generate_codigo(db: Session) -> str:
@@ -137,10 +154,17 @@ def create_orden(db: Session, data: OrdenServicioCreate, user_id: int) -> OrdenS
             db.commit()
             db.refresh(orden)
             return orden
-        except sa_exc.IntegrityError:
+        except sa_exc.IntegrityError as error:
             db.rollback()
-            continue
-    raise ValueError("No se pudo generar un codigo unico tras varios intentos")
+            if es_conflicto_codigo(error):
+                continue
+            logger.error("Error de integridad al crear la orden %s: %s", codigo, error)
+            raise OrdenError(
+                "No se pudo crear la orden: cliente, moto o tecnico invalidos"
+            ) from error
+    raise OrdenError(
+        "No se pudo asignar un codigo unico a la orden. Vuelve a intentarlo."
+    )
 
 
 def update_orden(db: Session, orden_id: int, data: OrdenServicioUpdate) -> Optional[OrdenServicio]:
