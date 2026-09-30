@@ -124,6 +124,8 @@ const BZAutocomplete = (function () {
         let selectedIndex = -1;
         let isOpen = false;
         let debounceTimer = null;
+        let ultimoPadre = '';
+        let errorDeCarga = false;
 
         // --- Filter & Render ---
         function filterItems(query) {
@@ -210,6 +212,11 @@ const BZAutocomplete = (function () {
         });
 
         input.addEventListener('focus', function () {
+            if (errorDeCarga && ultimoPadre) {
+                errorDeCarga = false;
+                loadAsync(ultimoPadre);
+                return;
+            }
             var query = this.value.trim();
             if (allItems.length > 0) {
                 render(query);
@@ -290,18 +297,66 @@ const BZAutocomplete = (function () {
         });
 
         // --- AJAX reload (for dependent dropdowns) ---
+        function marcarErrorCarga() {
+            errorDeCarga = true;
+            input.disabled = false;
+            input.value = '';
+            input.placeholder = options.placeholder || 'Buscar...';
+            hidden.value = '';
+            wrapper.classList.remove('has-value');
+            var group = wrapper.closest('.form-group');
+            if (!group) return;
+            group.classList.add('error');
+            if (!group.querySelector('.error-message')) {
+                var msg = document.createElement('span');
+                msg.className = 'error-message';
+                msg.textContent = 'No se pudieron cargar las motos. Elige de nuevo el cliente para reintentar.';
+                group.appendChild(msg);
+            }
+        }
+
+        function limpiarErrorCarga() {
+            errorDeCarga = false;
+            var group = wrapper.closest('.form-group');
+            if (!group) return;
+            group.classList.remove('error');
+            var msg = group.querySelector('.error-message');
+            if (msg) msg.remove();
+        }
+
         function loadAsync(parentId, keepValue) {
             if (!options.async) return;
-            var url = options.async.replace('{id}', parentId).replace('{client_id}', parentId);
             var preserve = keepValue || '';
+            ultimoPadre = parentId || '';
+
+            if (!parentId) {
+                limpiarErrorCarga();
+                allItems = [];
+                input.value = '';
+                hidden.value = '';
+                input.placeholder = options.placeholder || 'Buscar...';
+                wrapper.classList.remove('has-value');
+                return;
+            }
+
+            var url = options.async.replace('{id}', parentId).replace('{client_id}', parentId);
+            if (/\{[a-z_]+\}/i.test(url)) {
+                marcarErrorCarga();
+                return;
+            }
+
             input.disabled = true;
             input.value = 'Cargando...';
             hidden.value = '';
             wrapper.classList.remove('has-value');
 
             fetch(url)
-                .then(function (r) { return r.json(); })
+                .then(function (r) {
+                    if (!r.ok) throw new Error('HTTP ' + r.status);
+                    return r.json();
+                })
                 .then(function (data) {
+                    if (!Array.isArray(data)) throw new Error('Respuesta inesperada');
                     allItems = data.map(function (item) {
                         return {
                             value: String(item.id),
@@ -311,6 +366,7 @@ const BZAutocomplete = (function () {
                             data: {}
                         };
                     });
+                    limpiarErrorCarga();
                     input.disabled = false;
                     input.placeholder = options.placeholder || 'Buscar...';
                     var seleccionada = preserve
@@ -326,9 +382,7 @@ const BZAutocomplete = (function () {
                     wrapper.classList.remove('has-value');
                 })
                 .catch(function () {
-                    input.value = '';
-                    input.disabled = false;
-                    input.placeholder = 'Error al cargar';
+                    marcarErrorCarga();
                 });
         }
 

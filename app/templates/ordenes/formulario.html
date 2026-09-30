@@ -28,7 +28,7 @@
             <div class="form-row">
                 <div class="form-group">
                     <label for="client_id">Cliente *</label>
-                    <select id="client_id" name="client_id" required onchange="cargarMotos(this.value)">
+                    <select id="client_id" name="client_id" required>
                         <option value="">Seleccionar cliente...</option>
                         {% for c in clientes %}
                         <option value="{{ c.id }}" {% if (orden and orden.client_id == c.id) or (client_id == c.id) %}selected{% endif %}>
