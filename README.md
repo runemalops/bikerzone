@@ -14,6 +14,9 @@ Sistema de gestion para taller de motocicletas.
 - Diseno responsive para movil
 - Dark/Light mode
 - Notificaciones automaticas (email SMTP y Telegram)
+- Ordenes con varios tipos de servicio a la vez: lista de fallas por tipo, una
+  etiqueta por tipo en la orden de trabajo y linea `Servicios:` en el PDF
+- Enlace directo de WhatsApp (`wa.me`) desde la orden
 - Panel de servicio preventivo con reprogramacion por kilometraje
 
 ## Requisitos
@@ -58,7 +61,7 @@ Los tecnicos los crea `services.seed`; el admin usa `ADMIN_EMAIL` /
 ## Testing
 
 ```bash
-# Dentro del contenedor (recomendado)
+# Desarrollo, dentro del contenedor (recomendado)
 docker compose exec web python -m pytest tests/ -q
 
 # O en el host si tienes las dependencias instaladas
@@ -66,6 +69,22 @@ python -m pytest tests/ -q
 ```
 
 Asegurese de que la base de datos de prueba este limpia si hay errores de SQLite (`rm -f test.db`).
+
+**En produccion** hay que pisar dos variables; sin eso la suite falla por motivos
+ajenos al codigo (214 pruebas en verde con estos overrides):
+
+```bash
+docker compose -f docker-compose.prod.yml -f docker-compose.traefik.yml exec -T \
+  -e ENVIRONMENT=development -e SMTP_HOST= -e SMTP_USER= -e SMTP_PASSWORD= web pytest -q
+```
+
+- `ENVIRONMENT=production` emite la cookie `Secure` y el cliente de pruebas
+  (`http://testserver`) no la reenvia: 53 pruebas acaban en 302 hacia `/login`.
+- El `.env` de produccion trae un SMTP real: sin vaciarlo,
+  `test_fallo_sin_smtp_registra_error` enviaria un correo de verdad.
+
+> `tests/` **no** esta en el volumen del contenedor (solo se monta `./app`):
+> despues de modificar un test haz `up -d --build`, un `restart` no lo coge.
 
 ## Desarrollo
 
@@ -79,6 +98,23 @@ docker compose down
 # Parar y borrar base de datos
 docker compose down -v
 ```
+
+### Formato de `falla_reportada` (tipos de servicio)
+
+No hay columna de tipos: las claves del catalogo (`SERVICIOS_CATALOGO`, en
+`app/schemas/orden_servicio.py`) se guardan codificadas en la columna de texto
+`service_orders.falla_reportada`:
+
+```
+[Frenos + Motor: Pastillas desgastadas, No enciende] descripcion libre
+```
+
+- Los tipos van separados por ` + `, las fallas por coma; el texto despues de `]`
+  es la descripcion libre que escribio el usuario.
+- Los datos antiguos de un solo tipo (`[Frenos: ...] descripcion`) se decodifican igual.
+- Helpers: `codificar_falla_reportada()` / `decodificar_falla_reportada()`.
+- El CSV/XLSX exporta el campo **crudo**; el PDF de la orden de trabajo lo muestra
+  ya decodificado (`Servicios: Frenos + Motor`).
 
 ---
 
@@ -362,6 +398,10 @@ Si SMTP falla, revisa:
 docker compose -f docker-compose.prod.yml logs web | grep -i smtp
 ```
 
+**WhatsApp**: no hay API ni variable `WHATSAPP_*` en `.env`. La orden solo genera
+un enlace `https://wa.me/<telefono>?texto=...` (boton WhatsApp en la orden) que
+se abre a mano con el numero del cliente; el servidor no envia nada.
+
 ### 7. Copias de seguridad
 
 `scripts/backup.sh` genera un dump de PostgreSQL **con validacion de datos** y verifica que el archivo sea restaurable antes de dar por bueno el backup.
@@ -448,7 +488,46 @@ docker compose -f docker-compose.prod.yml exec web python -m alembic upgrade hea
 > comandos:
 > `docker compose -f docker-compose.prod.yml -f docker-compose.traefik.yml up -d --build`
 
+#### Si los cambios llegaron en un PR
+
+El flujo habitual es rama `feature/session_...` -> PR -> `main`. El clon de
+produccion no hace `git pull` directo: sincroniza con el remoto y reconstruye:
+
+```bash
+git fetch origin
+git merge origin/main
+docker compose -f docker-compose.prod.yml -f docker-compose.traefik.yml up -d --build
+
+# el arbol debe quedar identico al remoto (diff vacio)
+git diff --stat origin/main..HEAD
+```
+
+La historia local puede conservar merges propios; lo que importa es que
+`git diff origin/main..HEAD` no devuelva nada.
+
 ### 9. Problemas conocidos
+
+#### Problema: el navegador ejecuta JS/CSS viejos (estilos desactualizados o errores nuevos)
+
+**Sintoma**: en el servidor todo esta desplegado, pero el navegador muestra un
+comportamiento antiguo (p. ej. el texto "Error al cargar" al elegir cliente) o
+los estilos no coinciden con el codigo.
+
+**Causa**: nginx sirve `/static/` con `expires 1h` (`nginx/default.conf`) y las
+plantillas cachean con un `?v=` fijo (`base.html`, `login.html`). Un cliente con
+la copia anterior sigue ejecutando el JS viejo: por ejemplo el
+`autocomplete.js` antiguo pedia `/ordenes/api/motos/{client_id}` (literal) y el
+servidor respondia 422.
+
+**Solucion**
+
+1. Al cambiar cualquier fichero de `app/static/`, sube el sufijo en
+   `app/templates/base.html` (`main.js?v=`, `autocomplete.js?v=`) y en
+   `login.html` / `base.html` para `style.css?v=`.
+2. Reconstruye: `docker compose ... up -d --build` (recuerda que `tests/` y el
+   codigo Python van en la imagen, no en un volumen).
+3. Si el cliente sigue con el problema: `Ctrl+F5` o DevTools > Network >
+   Disable cache.
 
 #### Problema: `Bind for 0.0.0.0:80 failed: port is already allocated`
 
