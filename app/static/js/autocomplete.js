@@ -93,7 +93,10 @@ const BZAutocomplete = (function () {
         clearBtn.setAttribute('tabindex', '-1');
 
         // Copy attributes from original select
-        if (select.required) hidden.required = true;
+        if (select.required) {
+            hidden.required = true;
+            input.setAttribute('aria-required', 'true');
+        }
         if (select.dataset.required) hidden.dataset.required = select.dataset.required;
         select.removeAttribute('required');
         select.removeAttribute('data-required');
@@ -287,9 +290,10 @@ const BZAutocomplete = (function () {
         });
 
         // --- AJAX reload (for dependent dropdowns) ---
-        function loadAsync(parentId) {
+        function loadAsync(parentId, keepValue) {
             if (!options.async) return;
-            var url = options.async.replace('{id}', parentId);
+            var url = options.async.replace('{id}', parentId).replace('{client_id}', parentId);
+            var preserve = keepValue || '';
             input.disabled = true;
             input.value = 'Cargando...';
             hidden.value = '';
@@ -307,9 +311,19 @@ const BZAutocomplete = (function () {
                             data: {}
                         };
                     });
-                    input.value = '';
                     input.disabled = false;
                     input.placeholder = options.placeholder || 'Buscar...';
+                    var seleccionada = preserve
+                        ? allItems.find(function (item) { return item.value === preserve; })
+                        : null;
+                    if (seleccionada) {
+                        hidden.value = seleccionada.value;
+                        input.value = seleccionada.label.replace(/\s*\(.*\)\s*$/, '');
+                        wrapper.classList.add('has-value');
+                        return;
+                    }
+                    input.value = '';
+                    wrapper.classList.remove('has-value');
                 })
                 .catch(function () {
                     input.value = '';

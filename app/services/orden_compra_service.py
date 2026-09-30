@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime
 from typing import Optional, List, Tuple
 from sqlalchemy.orm import Session
@@ -15,6 +16,9 @@ from app.schemas.orden_compra import (
     FLUJO_ESTADOS_COMPRA,
     ESTADOS_COMPRA,
 )
+from app.services.orden_service import OrdenError, es_conflicto_codigo
+
+logger = logging.getLogger(__name__)
 
 
 def generate_codigo(db: Session) -> str:
@@ -124,10 +128,17 @@ def create_orden_compra(
             db.commit()
             db.refresh(orden)
             return orden
-        except sa_exc.IntegrityError:
+        except sa_exc.IntegrityError as error:
             db.rollback()
-            continue
-    raise ValueError("No se pudo generar un codigo unico tras varios intentos")
+            if es_conflicto_codigo(error):
+                continue
+            logger.error("Error de integridad al crear la orden de compra %s: %s", codigo, error)
+            raise OrdenError(
+                "No se pudo crear la orden de compra: proveedor o repuestos invalidos"
+            ) from error
+    raise OrdenError(
+        "No se pudo asignar un codigo unico a la orden de compra. Vuelve a intentarlo."
+    )
 
 
 def cambiar_estado_orden_compra(

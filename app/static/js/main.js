@@ -366,13 +366,20 @@
 
     // --- Form Validation + Submit Loading (unified) ---
     function initFormValidation() {
+        function controlVisible(field) {
+            if (field.type !== 'hidden') return field;
+            const group = field.closest('.form-group');
+            return (group && group.querySelector('input:not([type="hidden"])')) || field;
+        }
+
         document.querySelectorAll('form').forEach(function (form) {
             form.addEventListener('submit', function (e) {
                 let valid = true;
 
                 form.querySelectorAll('[required]').forEach(function (field) {
-                    if (field.disabled || field.type === 'hidden') return;
+                    if (field.disabled) return;
                     const group = field.closest('.form-group');
+                    const target = controlVisible(field);
                     if (!field.value.trim()) {
                         valid = false;
                         if (group) {
@@ -384,14 +391,14 @@
                                 group.appendChild(msg);
                             }
                         }
-                        field.setAttribute('aria-invalid', 'true');
+                        target.setAttribute('aria-invalid', 'true');
                     } else {
                         if (group) {
                             group.classList.remove('error');
                             var existingMsg = group.querySelector('.error-message');
                             if (existingMsg) existingMsg.remove();
                         }
-                        field.removeAttribute('aria-invalid');
+                        target.removeAttribute('aria-invalid');
                     }
                 });
 
@@ -417,14 +424,16 @@
                 }
             });
 
-            // Clear error on input
+            // Clear error on input/change
             form.querySelectorAll('[required]').forEach(function (field) {
-                field.addEventListener('input', function () {
-                    const group = this.closest('.form-group');
-                    if (group && group.classList.contains('error') && this.value.trim()) {
-                        group.classList.remove('error');
-                        this.removeAttribute('aria-invalid');
-                    }
+                ['input', 'change'].forEach(function (evt) {
+                    field.addEventListener(evt, function () {
+                        const group = this.closest('.form-group');
+                        if (group && group.classList.contains('error') && this.value.trim()) {
+                            group.classList.remove('error');
+                            controlVisible(this).removeAttribute('aria-invalid');
+                        }
+                    });
                 });
             });
         });

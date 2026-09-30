@@ -258,7 +258,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Moto autocomplete with async loading
     var motoAc = BZAutocomplete.init('#motorcycle_id', {
-        placeholder: 'Seleccionar moto...'
+        placeholder: 'Seleccionar moto...',
+        async: '/ordenes/api/motos/{client_id}'
     });
 
     // Tecnico autocomplete
@@ -266,10 +267,10 @@ document.addEventListener('DOMContentLoaded', function() {
         placeholder: 'Buscar tecnico por nombre...'
     });
 
-    // If a client is pre-selected (edit form), load their motos
+    // If a client is pre-selected (edit form), load their motos keeping the selected moto
     var clientSelect = document.querySelector('[name="client_id"]');
-    if (clientSelect && clientSelect.value) {
-        if (motoAc) motoAc.loadAsync(clientSelect.value);
+    if (clientSelect && clientSelect.value && motoAc) {
+        motoAc.loadAsync(clientSelect.value, motoAc.hidden.value);
     }
 
     // Auto-resize textarea
